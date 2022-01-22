@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body, html {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: "Roboto", "Helvetica", "Arial", sans-serif;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+form {
+  padding: 16px;
+  width: 100%;
+  max-width: 380px;
+  box-sizing: border-box;
+}
+
+h1 {
+  text-align: center;
+}
+
+.error {
+  padding: 12px;
+  margin: 12px 0;
+  color: white;
+  background-color: #f44336;
+  border-color: #f44336;
+}
+
+.success {
+  padding: 12px;
+  margin: 12px 0;
+  color: white;
+  background-color: #4caf50;
+  border-color: #4caf50;
+}
+
+input {
+  width: 100%;
+  padding: 12px 20px;
+  margin: 8px 0;
+  display: inline-block;
+  border: 1px solid #ccc;
+  box-sizing: border-box;
+}
+
+button {
+  background-color: #04AA6D;
+  color: white;
+  padding: 14px 20px;
+  margin: 8px 0;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+</style>
+</head>
+<body>
+
+<form action="" method="post">
+  <h1> {{ .AppName }} </h1>
+
+  {{ if .Error }}
+    <div class="error"> {{ .Error }} </div>
+    <a href="javascript:location = location">Reload page</a>
+  {{ else if .Success }}
+    <div class="success"> {{ .Success }} </div>
+  {{ else }}
+    <label for="email"><b>E-Mail</b></label>
+    <input type="email" placeholder="Enter valid email address" name="email" required>
+
+    <button type="submit">Send login link</button>
+    <!--<label>
+      <input type="checkbox" checked="checked" name="remember"> Remember me
+    </label>-->
+  {{ end -}}
+</form>
+
+</body>
+</html>
