@@ -82,26 +82,26 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 		session, err := s.auth.Get(token)
 		if errors.Is(err, auth.ErrTokenNotFound) || err == nil && session.LoggedIn() {
 			logger.Warn().Msg("invalid login link")
-			s.page.Error(w, "Invalid link", http.StatusBadRequest)
+			s.page.Error(w, "Invalid login link.", http.StatusBadRequest)
 			return
 		}
 
 		if err != nil {
 			logger.Err(err).Msg("unable to get session")
-			s.page.Error(w, "Error while getting session, please contact your system administrator", http.StatusInternalServerError)
+			s.page.Error(w, "Error while getting session, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
 		if session.Expired() {
 			logger.Warn().Str("email", session.Email()).Msg("login link expired")
-			s.page.Error(w, "Link already expired, please request new", http.StatusBadRequest)
+			s.page.Error(w, "Login link aleady expired, please request new.", http.StatusBadRequest)
 			return
 		}
 
 		newToken, err := s.auth.Login(token)
 		if err != nil {
 			logger.Err(err).Str("email", session.Email()).Msg("unable to login")
-			s.page.Error(w, "Error while logging in, please contact your system administrator", http.StatusInternalServerError)
+			s.page.Error(w, "Error while logging in, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
@@ -144,27 +144,27 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 		email := r.FormValue("email")
 		if email == "" {
 			logger.Debug().Str("email", email).Msg("no email provided")
-			s.page.Error(w, "No email provided", http.StatusBadRequest)
+			s.page.Error(w, "No email provided.", http.StatusBadRequest)
 			return
 		}
 
 		if !s.verifyEmail(email) {
 			logger.Warn().Str("email", email).Msg("email not allowed")
-			s.page.Error(w, "Given E-Mail is not permitted for login, please contact your system administrator", http.StatusForbidden)
+			s.page.Error(w, "Given E-Mail is not permitted for login, please contact your system administrator.", http.StatusForbidden)
 			return
 		}
 
 		token, err := s.auth.Add(email)
 		if err != nil {
 			logger.Err(err).Str("email", email).Msg("unable to create session")
-			s.page.Error(w, "Error while creating session, please contact your system administrator", http.StatusInternalServerError)
+			s.page.Error(w, "Error while creating session, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
 		err = s.mail.Send(email, token, redirectTo)
 		if err != nil {
 			logger.Err(err).Str("email", email).Msg("unable to send email")
-			s.page.Error(w, "Error while sending email, please contact your system administrator", http.StatusInternalServerError)
+			s.page.Error(w, "Error while sending email, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
@@ -173,7 +173,7 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logger.Debug().Msg("method not allowed")
+	logger.Debug().Str("method", r.Method).Msg("method not allowed")
 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
 
@@ -193,14 +193,14 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
 
-		logger.Warn().Str("token", token).Msg("token not found")
-		s.page.Error(w, "Token not found", http.StatusUnauthorized)
+		logger.Warn().Msg("session token not found")
+		s.page.Error(w, "Session token not found, please log in again.", http.StatusUnauthorized)
 		return
 	}
 
 	if err != nil {
 		logger.Err(err).Msg("unable to get session")
-		s.page.Error(w, "Error while getting session, please contact your system administrator", http.StatusInternalServerError)
+		s.page.Error(w, "Error while getting session, please contact your system administrator.", http.StatusInternalServerError)
 		return
 	}
 
@@ -210,7 +210,7 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, sessionCookie)
 
 		logger.Warn().Str("email", session.Email()).Msg("session expired")
-		s.page.Error(w, "Session expried", http.StatusForbidden)
+		s.page.Error(w, "Session expried, please log in again.", http.StatusForbidden)
 		return
 	}
 
@@ -221,13 +221,13 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 
 		err := s.auth.Delete(token)
 		if err != nil {
-			logger.Warn().Str("token", token).Msg("unable to delete session")
-			s.page.Error(w, "Error while deleting session, please contact your system administrator", http.StatusInternalServerError)
+			logger.Err(err).Msg("unable to delete session")
+			s.page.Error(w, "Error while deleting session, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
 		logger.Info().Str("email", session.Email()).Msg("session deleted")
-		s.page.Success(w, "You have been successfully logged out")
+		s.page.Success(w, "You have been successfully logged out.")
 		return
 	}
 

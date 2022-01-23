@@ -7,6 +7,8 @@ import (
 	"net/url"
 
 	"email-proxy-auth/internal/config"
+
+	"github.com/rs/zerolog/log"
 )
 
 type Template struct {
@@ -61,7 +63,8 @@ func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
 		AppUrl:  manager.app.Url,
 		Error:   msg,
 	}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Err(err).Msg("error while serving page")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
@@ -72,7 +75,8 @@ func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 		AppUrl:  manager.app.Url,
 		Success: msg,
 	}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Err(err).Msg("error while serving page")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
@@ -80,14 +84,16 @@ func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
 	appUrl, err := manager.getAppUrl(redirectTo)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Err(err).Msg("error while serving page")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
 
 	if err := manager.tmpl.Execute(w, Template{
 		AppName: manager.app.Name,
 		AppUrl:  appUrl,
 	}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Err(err).Msg("error while serving page")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
@@ -98,7 +104,8 @@ func (manager *Manager) LoggedIn(w http.ResponseWriter) {
 		AppUrl:   manager.app.Url,
 		LoggedIn: true,
 	}); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		log.Err(err).Msg("error while serving page")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 }
