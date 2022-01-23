@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
 	"email-proxy-auth/internal/auth"
@@ -20,6 +21,13 @@ type serve struct {
 	auth *auth.Manager
 	mail *mail.Manager
 	page *page.Manager
+}
+
+func (s *serve) newLogger(r *http.Request) zerolog.Logger {
+	return log.With().
+		Str("remote-addr", r.RemoteAddr).
+		Str("user-agent", r.UserAgent()).
+		Logger()
 }
 
 func (s *serve) verifyRedirectLink(redirectTo string) bool {
@@ -62,6 +70,8 @@ func (s *serve) verifyEmail(email string) bool {
 
 func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		logger := s.newLogger(r)
+
 		secret := r.URL.Query().Get("login")
 		if secret == "" || r.Method != "GET" {
 			next.ServeHTTP(w, r)
@@ -74,12 +84,15 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		profile := session.Profile()
 		if session.Expired() {
+			logger.Warn().Str("email", profile.Email).Msg("link expired")
 			s.page.Error(w, "Link already expired, please request new", http.StatusBadRequest)
 			return
 		}
 
 		if session.LoggedIn() {
+			logger.Warn().Str("email", profile.Email).Msg("link already used")
 			s.page.Error(w, "Link has been already used, please request new", http.StatusConflict)
 			return
 		}
@@ -106,14 +119,17 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			to = s.config.App.Url
 		}
 
+		logger.Info().Str("email", profile.Email).Str("to", to).Msg("login verified")
 		http.Redirect(w, r, to, http.StatusTemporaryRedirect)
 	}
 }
 
 func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
+	logger := s.newLogger(r)
 	redirectTo := r.URL.Query().Get("to")
 
 	if r.Method == "GET" {
+		log.Debug().Msg("requested login page")
 		s.page.Login(w, redirectTo)
 		return
 	}
@@ -121,11 +137,13 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
 		email := r.FormValue("email")
 		if email == "" {
+			logger.Debug().Str("email", email).Msg("no email provided")
 			s.page.Error(w, "No email provided", http.StatusBadRequest)
 			return
 		}
 
 		if !s.verifyEmail(email) {
+			logger.Warn().Str("email", email).Msg("email not allowed")
 			s.page.Error(w, "Given E-Mail is not permitted for login, please contact your system administrator", http.StatusForbidden)
 			return
 		}
@@ -136,18 +154,23 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 
 		err := s.mail.Send(session, redirectTo)
 		if err != nil {
-			s.page.Error(w, err.Error(), http.StatusInternalServerError)
+			logger.Err(err).Str("email", email).Msg("unable to send email")
+			s.page.Error(w, "Unable to send email, please contact your system administrator", http.StatusInternalServerError)
 			return
 		}
 
+		logger.Info().Str("email", email).Msg("email sent")
 		s.page.Success(w, "Please check your E-Mail inbox for further instructions.")
 		return
 	}
 
+	logger.Debug().Msg("method not allowed")
 	http.Error(w, http.StatusText(http.StatusMethodNotAllowed), http.StatusMethodNotAllowed)
 }
 
 func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
+	logger := s.newLogger(r)
+
 	sessionCookie, err := r.Cookie(s.config.Cookie.Name)
 	if err != nil {
 		s.loginPage(w, r)
@@ -161,15 +184,18 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
 
+		logger.Warn().Str("token", token).Msg("token not found")
 		s.page.Error(w, "Token not found", http.StatusUnauthorized)
 		return
 	}
 
+	profile := session.Profile()
 	if session.Expired() {
 		// remove cookie
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
 
+		logger.Warn().Str("email", profile.Email).Msg("session expired")
 		s.page.Error(w, "Session expried", http.StatusForbidden)
 		return
 	}
@@ -181,11 +207,11 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
 
+		logger.Info().Str("email", profile.Email).Msg("logged out")
 		s.page.Success(w, "You have been successfully logged out")
 		return
 	}
 
-	profile := session.Profile()
 	w.Header().Set("X-Auth-Email", profile.Email)
 	s.page.LoggedIn(w)
 }
