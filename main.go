@@ -5,7 +5,6 @@ import (
 	"email-proxy-auth/mail"
 	"email-proxy-auth/page"
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
@@ -67,7 +66,7 @@ func init() {
 
 var secureCookie = false
 
-func loginLink(next http.HandlerFunc) http.HandlerFunc {
+func loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		secret := r.URL.Query().Get("login")
 		if secret == "" || r.Method != "GET" {
@@ -170,12 +169,23 @@ func main() {
 			return
 		}
 
+		if r.Method == "POST" && r.FormValue("logout") != "" {
+			sessions.Delete(session)
+
+			// remove cookie
+			sessionCookie.Expires = time.Unix(0, 0)
+			http.SetCookie(w, sessionCookie)
+
+			wpage.Success(w, "You have been successfully logged out")
+			return
+		}
+
 		profile := session.Profile()
-		greet := fmt.Sprintf("Welcome, %s!", profile.Email)
-		wpage.Success(w, greet)
+		w.Header().Set("X-Auth-Email", profile.Email)
+		wpage.LoggedIn(w)
 	}
 
-	http.HandleFunc("/", loginLink(handle))
+	http.HandleFunc("/", loginAction(handle))
 
 	log.Println("Starting http server on", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {

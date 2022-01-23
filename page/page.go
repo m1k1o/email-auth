@@ -7,9 +7,10 @@ import (
 )
 
 type Template struct {
-	AppName string
-	Success string
-	Error   string
+	AppName  string
+	Success  string
+	Error    string
+	LoggedIn bool
 }
 
 type Manager struct {
@@ -59,6 +60,16 @@ func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 func (manager *Manager) Login(w http.ResponseWriter) {
 	if err := manager.tmpl.Execute(w, Template{
 		AppName: manager.config.AppName,
+	}); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func (manager *Manager) LoggedIn(w http.ResponseWriter) {
+	if err := manager.tmpl.Execute(w, Template{
+		AppName:  manager.config.AppName,
+		LoggedIn: true,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
