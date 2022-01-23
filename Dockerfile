@@ -19,4 +19,6 @@ COPY tmpl tmpl
 
 ENTRYPOINT [ "email-proxy-auth" ]
 
-CMD [ "serve" ]
+EXPOSE 8080
+
+CMD [ "serve", "--app.bind", ":8080" ]
