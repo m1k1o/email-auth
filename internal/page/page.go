@@ -82,6 +82,8 @@ func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 }
 
 func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
+	w.WriteHeader(http.StatusUnauthorized)
+
 	appUrl, err := manager.getAppUrl(redirectTo)
 	if err != nil {
 		log.Err(err).Msg("error while serving page")
@@ -99,6 +101,8 @@ func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
 }
 
 func (manager *Manager) LoggedIn(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusOK)
+
 	if err := manager.tmpl.Execute(w, Template{
 		AppName:  manager.app.Name,
 		AppUrl:   manager.app.Url,
