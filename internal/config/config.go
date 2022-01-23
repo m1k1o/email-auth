@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -212,8 +213,13 @@ func (Redis) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().String("redis.addr", "127.0.0.1:6379", "Redis address.")
-	if err := viper.BindPFlag("redis.addr", cmd.PersistentFlags().Lookup("redis.addr")); err != nil {
+	cmd.PersistentFlags().String("redis.host", "127.0.0.1", "Redis host.")
+	if err := viper.BindPFlag("redis.host", cmd.PersistentFlags().Lookup("redis.host")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Int("redis.port", 6379, "Redis port.")
+	if err := viper.BindPFlag("redis.port", cmd.PersistentFlags().Lookup("redis.port")); err != nil {
 		return err
 	}
 
@@ -232,7 +238,7 @@ func (Redis) Init(cmd *cobra.Command) error {
 
 func (c *Redis) Set() {
 	c.Enabled = viper.GetBool("redis.enabled")
-	c.Addr = viper.GetString("redis.addr")
+	c.Addr = fmt.Sprintf("%s:%d", viper.GetString("redis.host"), viper.GetInt("redis.port"))
 	c.Password = viper.GetString("redis.password")
 	c.Database = viper.GetInt("redis.database")
 }
