@@ -258,6 +258,6 @@ func Serve(config config.Serve) (err error) {
 
 	http.Handle("/", manager)
 
-	log.Info().Msgf("Starting http server on %s", config.App.Bind)
+	log.Info().Msgf("starting http server on %s", config.App.Bind)
 	return http.ListenAndServe(config.App.Bind, nil)
 }
