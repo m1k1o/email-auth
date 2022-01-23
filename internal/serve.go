@@ -2,6 +2,8 @@ package internal
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -18,6 +20,20 @@ type serve struct {
 	auth *auth.Manager
 	mail *mail.Manager
 	page *page.Manager
+}
+
+func (s *serve) verifyRedirectLink(redirectTo string) bool {
+	if redirectTo == "" {
+		return false
+	}
+
+	redirectLink, err := url.Parse(redirectTo)
+	if err != nil {
+		return false
+	}
+
+	hostname := redirectLink.Hostname()
+	return s.config.Cookie.Domain == "" || strings.HasSuffix(hostname, s.config.Cookie.Domain)
 }
 
 func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
@@ -53,6 +69,7 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     s.config.Cookie.Name,
+			Domain:   s.config.Cookie.Domain,
 			Value:    session.Token(),
 			Expires:  time.Now().Add(s.config.Cookie.Expiration),
 			Secure:   s.config.Cookie.Secure,
@@ -60,13 +77,12 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			HttpOnly: s.config.Cookie.HttpOnly,
 		})
 
-		// TODO: Check redirect against whitelist.
-		redirectTo := r.URL.Query().Get("to")
-		if redirectTo == "" {
-			redirectTo = s.config.App.Url
+		to := r.URL.Query().Get("to")
+		if !s.verifyRedirectLink(to) {
+			to = s.config.App.Url
 		}
 
-		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, to, http.StatusTemporaryRedirect)
 	}
 }
 

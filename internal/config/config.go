@@ -127,6 +127,7 @@ func (c *Email) Set() {
 
 type Cookie struct {
 	Name       string
+	Domain     string
 	Secure     bool
 	HttpOnly   bool
 	Expiration time.Duration
@@ -135,6 +136,11 @@ type Cookie struct {
 func (Cookie) Init(cmd *cobra.Command) error {
 	cmd.PersistentFlags().String("cookie.name", "MAILSESSION", "Cookie name.")
 	if err := viper.BindPFlag("cookie.name", cmd.PersistentFlags().Lookup("cookie.name")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("cookie.domain", "", "Associated domain with the cookie.")
+	if err := viper.BindPFlag("cookie.domain", cmd.PersistentFlags().Lookup("cookie.domain")); err != nil {
 		return err
 	}
 
@@ -158,6 +164,7 @@ func (Cookie) Init(cmd *cobra.Command) error {
 
 func (c *Cookie) Set() {
 	c.Name = viper.GetString("cookie.name")
+	c.Domain = viper.GetString("cookie.domain")
 	c.Secure = viper.GetBool("cookie.secure")
 	c.HttpOnly = viper.GetBool("cookie.httponly")
 	c.Expiration = time.Duration(viper.GetInt("cookie.expiration")) * time.Hour
