@@ -1,22 +1,56 @@
-version: '3.5'
+version: "3"
 
 services:
-  app:
+
+  traefik:
+    image: traefik:v2.2
+    container_name: traefik
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 80:80
+      - 443:443
+    command:
+      - "--api"
+      - "--providers.docker.exposedByDefault=false"
+      - "--entrypoints.http=true"
+      - "--entrypoints.http.address=:80"
+      - "--entrypoints.http.http.redirections.entrypoint.to=https"
+      - "--entrypoints.http.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.https=true"
+      - "--entrypoints.https.address=:443"
+      - "--entrypoints.https.http.tls=true"
+      - "--log=true"
+      - "--log.level=DEBUG"
+
+  email-proxy-auth:
     build: "./"
     image: email-proxy-auth
     environment:
-      CFG_APP_BIND: ":8080"
+      CFG_APP_URL: "https://127.0.0.1/auth"
       CFG_EMAIL_HOST: "smtp4dev"
       CFG_REDIS_ENABLED: "true"
       CFG_REDIS_HOST: "redis"
-    ports:
-      - 8080:8080
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.email-proxy-auth.rule=Path(`/auth`)"
+      - "traefik.http.routers.email-proxy-auth.entrypoints=https"
+      - "traefik.http.middlewares.email-proxy-auth.forwardauth.address=http://email-proxy-auth:8080/"
+      - "traefik.http.middlewares.email-proxy-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.email-proxy-auth.forwardauth.authResponseHeaders=X-Auth-Email"
 
   redis:
     image: redis
   
+  protected:
+    image: nginx
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.protected.rule=PathPrefix(`/protected`)"
+      - "traefik.http.routers.protected.entrypoints=https"
+      - "traefik.http.routers.protected.middlewares=email-proxy-auth"
+
   smtp4dev:
     image: rnwood/smtp4dev:v3
     ports:
-      - 8081:80
-  
+      - 5000:80
