@@ -1,11 +1,12 @@
 package auth
 
 import (
-	"email-proxy-auth/internal/config"
 	"fmt"
 	"time"
 
 	"github.com/rs/zerolog/log"
+
+	"email-proxy-auth/internal/config"
 )
 
 var (

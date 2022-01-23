@@ -2,11 +2,12 @@ package auth
 
 import (
 	"context"
-	"email-proxy-auth/internal/config"
 	"sync"
 	"time"
 
 	"github.com/go-redis/redis/v8"
+
+	"email-proxy-auth/internal/config"
 )
 
 type storeRedis struct {
