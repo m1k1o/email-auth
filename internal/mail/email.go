@@ -10,7 +10,6 @@ import (
 
 	"gopkg.in/mail.v2"
 
-	"email-proxy-auth/internal/auth"
 	"email-proxy-auth/internal/config"
 )
 
@@ -70,24 +69,20 @@ func (manager *Manager) getBody(loginLink string) (string, error) {
 	return body.String(), err
 }
 
-func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
-	if session.LoggedIn() {
-		return fmt.Errorf("session is already logged in")
-	}
-
+func (manager *Manager) Send(email string, token string, redirectTo string) error {
 	m := mail.NewMessage()
 
 	// Set E-Mail sender
 	m.SetHeader("From", manager.config.Email.From)
 
 	// Set E-Mail receivers
-	m.SetHeader("To", session.Profile().Email)
+	m.SetHeader("To", email)
 
 	// Set E-Mail subject
 	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.config.App.Name))
 
 	// Get login link
-	loginLink, err := manager.getLoginLink(session.Token(), redirectTo)
+	loginLink, err := manager.getLoginLink(token, redirectTo)
 	if err != nil {
 		return err
 	}

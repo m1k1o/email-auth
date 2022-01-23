@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"net/http"
 	"net/url"
 	"strings"
@@ -18,7 +19,7 @@ import (
 type serve struct {
 	config config.Serve
 
-	auth *auth.Manager
+	auth auth.Store
 	mail *mail.Manager
 	page *page.Manager
 }
@@ -72,26 +73,37 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := s.newLogger(r)
 
-		secret := r.URL.Query().Get("login")
-		if secret == "" || r.Method != "GET" {
+		token := r.URL.Query().Get("login")
+		if token == "" || r.Method != "GET" {
 			next.ServeHTTP(w, r)
 			return
 		}
 
-		session, ok := s.auth.Get(secret)
-		if !ok || session.LoggedIn() {
-			next.ServeHTTP(w, r)
+		session, err := s.auth.Get(token)
+		if errors.Is(err, auth.ErrTokenNotFound) || err == nil && session.LoggedIn() {
+			logger.Warn().Msg("invalid login link")
+			s.page.Error(w, "Invalid link", http.StatusBadRequest)
 			return
 		}
 
-		profile := session.Profile()
+		if err != nil {
+			logger.Err(err).Msg("unable to get session")
+			s.page.Error(w, "Error while getting session, please contact your system administrator", http.StatusInternalServerError)
+			return
+		}
+
 		if session.Expired() {
-			logger.Warn().Str("email", profile.Email).Msg("link expired")
+			logger.Warn().Str("email", session.Email()).Msg("login link expired")
 			s.page.Error(w, "Link already expired, please request new", http.StatusBadRequest)
 			return
 		}
 
-		s.auth.Login(session)
+		newToken, err := s.auth.Login(token)
+		if err != nil {
+			logger.Err(err).Str("email", session.Email()).Msg("unable to login")
+			s.page.Error(w, "Error while logging in, please contact your system administrator", http.StatusInternalServerError)
+			return
+		}
 
 		sameSite := http.SameSiteDefaultMode
 		if s.config.Cookie.Secure {
@@ -101,7 +113,7 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 		http.SetCookie(w, &http.Cookie{
 			Name:     s.config.Cookie.Name,
 			Domain:   s.config.Cookie.Domain,
-			Value:    session.Token(),
+			Value:    newToken,
 			Expires:  time.Now().Add(s.config.Cookie.Expiration),
 			Secure:   s.config.Cookie.Secure,
 			SameSite: sameSite,
@@ -113,7 +125,7 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			to = s.config.App.Url
 		}
 
-		logger.Info().Str("email", profile.Email).Str("to", to).Msg("login verified")
+		logger.Info().Str("email", session.Email()).Str("to", to).Msg("login verified")
 		http.Redirect(w, r, to, http.StatusTemporaryRedirect)
 	}
 }
@@ -142,14 +154,17 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		session := s.auth.Create(auth.Profile{
-			Email: email,
-		})
+		token, err := s.auth.Add(email)
+		if err != nil {
+			logger.Err(err).Str("email", email).Msg("unable to create session")
+			s.page.Error(w, "Error while creating session, please contact your system administrator", http.StatusInternalServerError)
+			return
+		}
 
-		err := s.mail.Send(session, redirectTo)
+		err = s.mail.Send(email, token, redirectTo)
 		if err != nil {
 			logger.Err(err).Str("email", email).Msg("unable to send email")
-			s.page.Error(w, "Unable to send email, please contact your system administrator", http.StatusInternalServerError)
+			s.page.Error(w, "Error while sending email, please contact your system administrator", http.StatusInternalServerError)
 			return
 		}
 
@@ -172,8 +187,8 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := sessionCookie.Value
-	session, ok := s.auth.Get(token)
-	if !ok || !session.LoggedIn() {
+	session, err := s.auth.Get(token)
+	if errors.Is(err, auth.ErrTokenNotFound) || err == nil && !session.LoggedIn() {
 		// remove cookie
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
@@ -183,30 +198,40 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	profile := session.Profile()
+	if err != nil {
+		logger.Err(err).Msg("unable to get session")
+		s.page.Error(w, "Error while getting session, please contact your system administrator", http.StatusInternalServerError)
+		return
+	}
+
 	if session.Expired() {
 		// remove cookie
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
 
-		logger.Warn().Str("email", profile.Email).Msg("session expired")
+		logger.Warn().Str("email", session.Email()).Msg("session expired")
 		s.page.Error(w, "Session expried", http.StatusForbidden)
 		return
 	}
 
 	if r.Method == "POST" && r.FormValue("logout") != "" {
-		s.auth.Delete(session)
-
 		// remove cookie
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)
 
-		logger.Info().Str("email", profile.Email).Msg("logged out")
+		err := s.auth.Delete(token)
+		if err != nil {
+			logger.Warn().Str("token", token).Msg("unable to delete session")
+			s.page.Error(w, "Error while deleting session, please contact your system administrator", http.StatusInternalServerError)
+			return
+		}
+
+		logger.Info().Str("email", session.Email()).Msg("session deleted")
 		s.page.Success(w, "You have been successfully logged out")
 		return
 	}
 
-	w.Header().Set("X-Auth-Email", profile.Email)
+	w.Header().Set("X-Auth-Email", session.Email())
 	s.page.LoggedIn(w)
 }
 
@@ -220,9 +245,7 @@ func Serve(config config.Serve) (err error) {
 		config: config,
 	}
 
-	manager.auth = auth.New(auth.Config{
-		Expiration: config.Cookie.Expiration,
-	})
+	manager.auth = auth.NewStoreObject(config.Cookie.Expiration)
 
 	manager.mail, err = mail.New(mail.Config{
 		TemplatePath: config.Tmpl.Email,
