@@ -135,7 +135,7 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 	redirectTo := r.URL.Query().Get("to")
 
 	if r.Method == "GET" {
-		log.Debug().Msg("requested login page")
+		logger.Debug().Msg("requested login page")
 		s.page.Login(w, redirectTo)
 		return
 	}
