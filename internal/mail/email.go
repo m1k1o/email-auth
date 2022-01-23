@@ -11,6 +11,7 @@ import (
 	"gopkg.in/mail.v2"
 
 	"email-proxy-auth/internal/auth"
+	"email-proxy-auth/internal/config"
 )
 
 type Manager struct {
@@ -95,13 +96,37 @@ func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
 	// Set E-Mail body
 	m.SetBody("text/html", body)
 
-	// Settings for SMTP server
-	d := mail.NewDialer(manager.config.Email.Host, manager.config.Email.Port, manager.config.Email.Username, manager.config.Email.Password)
+	// Now send E-Mail
+	return Send(manager.config.Email, m)
+}
+
+func Send(config config.Email, message *mail.Message) error {
+	dialer := mail.NewDialer(config.Host, config.Port, config.Username, config.Password)
 
 	// This is only needed when SSL/TLS certificate is not valid on server.
 	// In production this should be set to false.
-	d.TLSConfig = &tls.Config{InsecureSkipVerify: true}
+	dialer.TLSConfig = &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	return dialer.DialAndSend(message)
+}
+
+func Test(config config.Email, toEmail string) error {
+	m := mail.NewMessage()
+
+	// Set E-Mail sender
+	m.SetHeader("From", config.From)
+
+	// Set E-Mail receivers
+	m.SetHeader("To", toEmail)
+
+	// Set E-Mail subject
+	m.SetHeader("Subject", "Test email from E-Mail proxy auth")
+
+	// Set E-Mail body
+	m.SetBody("text/plain", "If you see this in your inbox, that means the test was successful.")
 
 	// Now send E-Mail
-	return d.DialAndSend(m)
+	return Send(config, m)
 }
