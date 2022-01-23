@@ -3,13 +3,14 @@ package mail
 import (
 	"bytes"
 	"crypto/tls"
-	"email-proxy-auth/auth"
 	"fmt"
 	"html/template"
 	"io/ioutil"
 	"net/url"
 
 	"gopkg.in/mail.v2"
+
+	"email-proxy-auth/internal/auth"
 )
 
 type Manager struct {
@@ -35,7 +36,7 @@ func New(config Config) (*Manager, error) {
 }
 
 func (manager *Manager) getLoginLink(session *auth.Session, redirectTo string) (string, error) {
-	loginLink, err := url.Parse(manager.config.AppUrl)
+	loginLink, err := url.Parse(manager.config.App.Url)
 	if err != nil {
 		return "", err
 	}
@@ -60,7 +61,7 @@ func (manager *Manager) getBody(session *auth.Session, redirectTo string) (strin
 		AppName   string
 		LoginLink string
 	}{
-		AppName:   manager.config.AppName,
+		AppName:   manager.config.App.Name,
 		LoginLink: loginLink,
 	}
 
@@ -77,13 +78,13 @@ func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
 	m := mail.NewMessage()
 
 	// Set E-Mail sender
-	m.SetHeader("From", manager.config.FromAddress)
+	m.SetHeader("From", manager.config.Email.From)
 
 	// Set E-Mail receivers
 	m.SetHeader("To", session.Profile().Email)
 
 	// Set E-Mail subject
-	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.config.AppName))
+	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.config.App.Name))
 
 	// Get E-mail body
 	body, err := manager.getBody(session, redirectTo)
@@ -95,7 +96,7 @@ func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
 	m.SetBody("text/html", body)
 
 	// Settings for SMTP server
-	d := mail.NewDialer(manager.config.Host, manager.config.Port, manager.config.Username, manager.config.Password)
+	d := mail.NewDialer(manager.config.Email.Host, manager.config.Email.Port, manager.config.Email.Username, manager.config.Email.Password)
 
 	// This is only needed when SSL/TLS certificate is not valid on server.
 	// In production this should be set to false.

@@ -38,7 +38,7 @@ func New(config Config) (*Manager, error) {
 }
 
 func (manager *Manager) getAppUrl(redirectTo string) (string, error) {
-	loginLink, err := url.Parse(manager.config.AppUrl)
+	loginLink, err := url.Parse(manager.config.App.Url)
 	if err != nil {
 		return "", err
 	}
@@ -55,8 +55,8 @@ func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
 	w.WriteHeader(code)
 
 	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.config.AppName,
-		AppUrl:  manager.config.AppUrl,
+		AppName: manager.config.App.Name,
+		AppUrl:  manager.config.App.Url,
 		Error:   msg,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -66,8 +66,8 @@ func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
 
 func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.config.AppName,
-		AppUrl:  manager.config.AppUrl,
+		AppName: manager.config.App.Name,
+		AppUrl:  manager.config.App.Url,
 		Success: msg,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -82,7 +82,7 @@ func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
 	}
 
 	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.config.AppName,
+		AppName: manager.config.App.Name,
 		AppUrl:  appUrl,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -92,8 +92,8 @@ func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
 
 func (manager *Manager) LoggedIn(w http.ResponseWriter) {
 	if err := manager.tmpl.Execute(w, Template{
-		AppName:  manager.config.AppName,
-		AppUrl:   manager.config.AppUrl,
+		AppName:  manager.config.App.Name,
+		AppUrl:   manager.config.App.Url,
 		LoggedIn: true,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
