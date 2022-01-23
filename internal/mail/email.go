@@ -14,12 +14,13 @@ import (
 )
 
 type Manager struct {
-	config Config
-	tmpl   *template.Template
+	app   config.App
+	email config.Email
+	tmpl  *template.Template
 }
 
-func New(config Config) (*Manager, error) {
-	html, err := ioutil.ReadFile(config.TemplatePath)
+func New(templatePath string, app config.App, email config.Email) (*Manager, error) {
+	html, err := ioutil.ReadFile(templatePath)
 	if err != nil {
 		return nil, err
 	}
@@ -30,13 +31,14 @@ func New(config Config) (*Manager, error) {
 	}
 
 	return &Manager{
-		config: config,
-		tmpl:   tmpl,
+		app:   app,
+		email: email,
+		tmpl:  tmpl,
 	}, nil
 }
 
 func (manager *Manager) getLoginLink(token string, redirectTo string) (string, error) {
-	loginLink, err := url.Parse(manager.config.App.Url)
+	loginLink, err := url.Parse(manager.app.Url)
 	if err != nil {
 		return "", err
 	}
@@ -56,7 +58,7 @@ func (manager *Manager) getBody(loginLink string) (string, error) {
 		AppName   string
 		LoginLink string
 	}{
-		AppName:   manager.config.App.Name,
+		AppName:   manager.app.Name,
 		LoginLink: loginLink,
 	}
 
@@ -73,13 +75,13 @@ func (manager *Manager) Send(email string, token string, redirectTo string) erro
 	m := mail.NewMessage()
 
 	// Set E-Mail sender
-	m.SetHeader("From", manager.config.Email.From)
+	m.SetHeader("From", manager.email.From)
 
 	// Set E-Mail receivers
 	m.SetHeader("To", email)
 
 	// Set E-Mail subject
-	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.config.App.Name))
+	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.app.Name))
 
 	// Get login link
 	loginLink, err := manager.getLoginLink(token, redirectTo)
@@ -97,7 +99,7 @@ func (manager *Manager) Send(email string, token string, redirectTo string) erro
 	m.SetBody("text/html", body)
 
 	// Now send E-Mail
-	return Send(manager.config.Email, m)
+	return Send(manager.email, m)
 }
 
 func Send(config config.Email, message *mail.Message) error {

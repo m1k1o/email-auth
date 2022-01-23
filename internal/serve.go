@@ -243,27 +243,15 @@ func (s *serve) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Serve(config config.Serve) (err error) {
 	manager := &serve{
 		config: config,
+		auth:   auth.NewStore(config.Redis, config.Cookie.Expiration),
 	}
 
-	manager.auth = auth.NewStore(config.Redis, config.Cookie.Expiration)
-
-	manager.mail, err = mail.New(mail.Config{
-		TemplatePath: config.Tmpl.Email,
-
-		App:   config.App,
-		Email: config.Email,
-	})
-
+	manager.mail, err = mail.New(config.Tmpl.Email, config.App, config.Email)
 	if err != nil {
 		return
 	}
 
-	manager.page, err = page.New(page.Config{
-		TemplatePath: config.Tmpl.Page,
-
-		App: config.App,
-	})
-
+	manager.page, err = page.New(config.Tmpl.Page, config.App)
 	if err != nil {
 		return
 	}

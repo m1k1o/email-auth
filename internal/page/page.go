@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+
+	"email-proxy-auth/internal/config"
 )
 
 type Template struct {
@@ -16,12 +18,12 @@ type Template struct {
 }
 
 type Manager struct {
-	config Config
-	tmpl   *template.Template
+	app  config.App
+	tmpl *template.Template
 }
 
-func New(config Config) (*Manager, error) {
-	html, err := ioutil.ReadFile(config.TemplatePath)
+func New(templatePath string, app config.App) (*Manager, error) {
+	html, err := ioutil.ReadFile(templatePath)
 	if err != nil {
 		return nil, err
 	}
@@ -32,13 +34,13 @@ func New(config Config) (*Manager, error) {
 	}
 
 	return &Manager{
-		config: config,
-		tmpl:   tmpl,
+		app:  app,
+		tmpl: tmpl,
 	}, nil
 }
 
 func (manager *Manager) getAppUrl(redirectTo string) (string, error) {
-	loginLink, err := url.Parse(manager.config.App.Url)
+	loginLink, err := url.Parse(manager.app.Url)
 	if err != nil {
 		return "", err
 	}
@@ -55,8 +57,8 @@ func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
 	w.WriteHeader(code)
 
 	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.config.App.Name,
-		AppUrl:  manager.config.App.Url,
+		AppName: manager.app.Name,
+		AppUrl:  manager.app.Url,
 		Error:   msg,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -66,8 +68,8 @@ func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
 
 func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.config.App.Name,
-		AppUrl:  manager.config.App.Url,
+		AppName: manager.app.Name,
+		AppUrl:  manager.app.Url,
 		Success: msg,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -82,7 +84,7 @@ func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
 	}
 
 	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.config.App.Name,
+		AppName: manager.app.Name,
 		AppUrl:  appUrl,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -92,8 +94,8 @@ func (manager *Manager) Login(w http.ResponseWriter, redirectTo string) {
 
 func (manager *Manager) LoggedIn(w http.ResponseWriter) {
 	if err := manager.tmpl.Execute(w, Template{
-		AppName:  manager.config.App.Name,
-		AppUrl:   manager.config.App.Url,
+		AppName:  manager.app.Name,
+		AppUrl:   manager.app.Url,
 		LoggedIn: true,
 	}); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
