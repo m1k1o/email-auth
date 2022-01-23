@@ -36,6 +36,30 @@ func (s *serve) verifyRedirectLink(redirectTo string) bool {
 	return s.config.Cookie.Domain == "" || strings.HasSuffix(hostname, s.config.Cookie.Domain)
 }
 
+func (s *serve) verifyEmail(email string) bool {
+	// unspecified - allowed all
+	if len(s.config.App.Emails) == 0 {
+		return true
+	}
+
+	components := strings.Split(email, "@")
+	_, domain := components[0], components[1]
+
+	for _, rule := range s.config.App.Emails {
+		// exact match
+		if rule == email {
+			return true
+		}
+
+		// domain match
+		if strings.HasPrefix(rule, "@") && rule == "@"+domain {
+			return true
+		}
+	}
+
+	return false
+}
+
 func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		secret := r.URL.Query().Get("login")
@@ -95,16 +119,19 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == "POST" {
-		usrEmail := r.FormValue("email")
-		if usrEmail == "" {
+		email := r.FormValue("email")
+		if email == "" {
 			s.page.Error(w, "No email provided", http.StatusBadRequest)
 			return
 		}
 
-		// TODO: Check email against whitelist.
+		if !s.verifyEmail(email) {
+			s.page.Error(w, "Given E-Mail is not permitted for login, please contact your system administrator", http.StatusForbidden)
+			return
+		}
 
 		session := s.auth.Create(auth.Profile{
-			Email: usrEmail,
+			Email: email,
 		})
 
 		err := s.mail.Send(session, redirectTo)

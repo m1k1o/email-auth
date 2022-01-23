@@ -12,9 +12,10 @@ import (
 //
 
 type App struct {
-	Name string
-	Url  string
-	Bind string
+	Name   string
+	Url    string
+	Bind   string
+	Emails []string
 }
 
 func (App) Init(cmd *cobra.Command) error {
@@ -33,6 +34,11 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().StringSlice("app.emails", []string{}, "Allowed E-Mail addresses or domains (only @domain.org) to log in.")
+	if err := viper.BindPFlag("app.emails", cmd.PersistentFlags().Lookup("app.emails")); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -40,6 +46,7 @@ func (c *App) Set() {
 	c.Name = viper.GetString("app.name")
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
+	c.Emails = viper.GetStringSlice("app.emails")
 }
 
 //
