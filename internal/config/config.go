@@ -176,3 +176,45 @@ func (c *Cookie) Set() {
 	c.HttpOnly = viper.GetBool("cookie.httponly")
 	c.Expiration = time.Duration(viper.GetInt("cookie.expiration")) * time.Hour
 }
+
+//
+// redis
+//
+
+type Redis struct {
+	Enabled  bool
+	Addr     string
+	Password string
+	Database int
+}
+
+func (Redis) Init(cmd *cobra.Command) error {
+	cmd.PersistentFlags().Bool("redis.enabled", false, "If redis should be used or not.")
+	if err := viper.BindPFlag("redis.enabled", cmd.PersistentFlags().Lookup("redis.enabled")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("redis.addr", "127.0.0.1:6379", "Redis address.")
+	if err := viper.BindPFlag("redis.addr", cmd.PersistentFlags().Lookup("redis.addr")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("redis.password", "", "Redis password.")
+	if err := viper.BindPFlag("redis.password", cmd.PersistentFlags().Lookup("redis.password")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Int("redis.database", 0, "Redis database.")
+	if err := viper.BindPFlag("redis.database", cmd.PersistentFlags().Lookup("redis.database")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Redis) Set() {
+	c.Enabled = viper.GetBool("redis.enabled")
+	c.Addr = viper.GetString("redis.addr")
+	c.Password = viper.GetString("redis.password")
+	c.Database = viper.GetInt("redis.database")
+}

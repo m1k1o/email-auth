@@ -38,3 +38,14 @@ cookie:
   httponly: true
   # Cookie & session expiration in hours.  
   expiration: 744
+
+redis:
+  # If redis should be used or not.
+  enabled: false
+  # Redis address.
+  addr: "127.0.0.1:6379"
+  # Redis password.
+  password: ""
+  # Redis database.
+  database: 0
+  

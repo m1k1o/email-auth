@@ -245,7 +245,7 @@ func Serve(config config.Serve) (err error) {
 		config: config,
 	}
 
-	manager.auth = auth.NewStoreObject(config.Cookie.Expiration)
+	manager.auth = auth.NewStore(config.Redis, config.Cookie.Expiration)
 
 	manager.mail, err = mail.New(mail.Config{
 		TemplatePath: config.Tmpl.Email,

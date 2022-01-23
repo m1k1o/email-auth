@@ -9,6 +9,7 @@ type Serve struct {
 	Tmpl   Tmpl
 	Email  Email
 	Cookie Cookie
+	Redis  Redis
 }
 
 func (c *Serve) Init(cmd *cobra.Command) error {
@@ -28,6 +29,10 @@ func (c *Serve) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	if err := c.Redis.Init(cmd); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -36,4 +41,5 @@ func (c *Serve) Set() {
 	c.Tmpl.Set()
 	c.Email.Set()
 	c.Cookie.Set()
+	c.Redis.Set()
 }
