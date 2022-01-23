@@ -34,21 +34,24 @@ func New(config Config) (*Manager, error) {
 	}, nil
 }
 
-func (manager *Manager) getLoginLink(session *auth.Session) (string, error) {
-	loginLink, err := url.Parse(manager.config.BaseUrl)
+func (manager *Manager) getLoginLink(session *auth.Session, redirectTo string) (string, error) {
+	loginLink, err := url.Parse(manager.config.AppUrl)
 	if err != nil {
 		return "", err
 	}
 
 	q := loginLink.Query()
 	q.Add("login", session.Secret())
+	if redirectTo != "" {
+		q.Add("to", redirectTo)
+	}
 	loginLink.RawQuery = q.Encode()
 
 	return loginLink.String(), nil
 }
 
-func (manager *Manager) getBody(session *auth.Session) (string, error) {
-	loginLink, err := manager.getLoginLink(session)
+func (manager *Manager) getBody(session *auth.Session, redirectTo string) (string, error) {
+	loginLink, err := manager.getLoginLink(session, redirectTo)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +73,7 @@ func (manager *Manager) getBody(session *auth.Session) (string, error) {
 	return body.String(), err
 }
 
-func (manager *Manager) Send(session *auth.Session) error {
+func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
 	m := mail.NewMessage()
 
 	// Set E-Mail sender
@@ -83,7 +86,7 @@ func (manager *Manager) Send(session *auth.Session) error {
 	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.config.AppName))
 
 	// Get E-mail body
-	body, err := manager.getBody(session)
+	body, err := manager.getBody(session, redirectTo)
 	if err != nil {
 		return err
 	}

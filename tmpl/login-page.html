@@ -84,12 +84,12 @@ button[name=logout] {
 </head>
 <body>
 
-<form action="" method="post">
+<form action="{{ .AppUrl }}" method="post">
   <h1> {{ .AppName }} </h1>
 
   {{ if .Error }}
     <div class="error"> {{ .Error }} </div>
-    <a href="javascript:location = location">Reload page</a>
+    <a href="{{ .AppUrl }}">Reload page</a>
   {{ else if .Success }}
     <div class="success"> {{ .Success }} </div>
   {{ else }}

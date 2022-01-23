@@ -2,6 +2,6 @@ package page
 
 type Config struct {
 	AppName      string
-	BaseUrl      string
+	AppUrl       string
 	TemplatePath string
 }

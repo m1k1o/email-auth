@@ -11,7 +11,7 @@ import (
 )
 
 var (
-	addr, sessionCookieName, appName, baseURL string
+	addr, sessionCookieName, appName, appUrl string
 )
 
 var (
@@ -24,7 +24,7 @@ func init() {
 	flag.StringVar(&addr, "addr", ":8080", "Address, where is HTTP server listening.")
 	flag.StringVar(&sessionCookieName, "cookie", "MAILSESS", "Session cookie name.")
 	flag.StringVar(&appName, "app", "E-mail proxy auth", "App name used on lign page and in emails.")
-	flag.StringVar(&baseURL, "base", "http://127.0.0.1:8080/", "Base URL for all requests and redirects.")
+	flag.StringVar(&appUrl, "base", "http://127.0.0.1:8080/", "Base URL for all requests and redirects.")
 	flag.Parse()
 
 	sessions = auth.New(auth.Config{
@@ -34,7 +34,7 @@ func init() {
 	var err error
 	email, err = mail.New(mail.Config{
 		AppName:      appName,
-		BaseUrl:      baseURL,
+		AppUrl:       appUrl,
 		TemplatePath: "./tmpl/login-email.html",
 		FromAddress:  "admin@localhost",
 
@@ -51,7 +51,7 @@ func init() {
 
 	wpage, err = page.New(page.Config{
 		AppName:      appName,
-		BaseUrl:      baseURL,
+		AppUrl:       appUrl,
 		TemplatePath: "./tmpl/login-page.html",
 	})
 
@@ -106,14 +106,21 @@ func loginAction(next http.HandlerFunc) http.HandlerFunc {
 			HttpOnly: true,
 		})
 
-		// TODO: Redirect to target app.
-		wpage.Success(w, "You have been succesfully logged in.")
+		// TODO: Check redirect against whitelist.
+		redirectTo := r.URL.Query().Get("to")
+		if redirectTo == "" {
+			redirectTo = appUrl
+		}
+
+		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
 	}
 }
 
 func loginPage(w http.ResponseWriter, r *http.Request) {
+	redirectTo := r.URL.Query().Get("to")
+
 	if r.Method == "GET" {
-		wpage.Login(w)
+		wpage.Login(w, redirectTo)
 		return
 	}
 
@@ -124,11 +131,13 @@ func loginPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// TODO: Check email against whitelist.
+
 		session := sessions.Create(auth.Profile{
 			Email: usrEmail,
 		})
 
-		err := email.Send(session)
+		err := email.Send(session, redirectTo)
 		if err != nil {
 			wpage.Error(w, err.Error(), http.StatusInternalServerError)
 			return
