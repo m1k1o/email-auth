@@ -42,7 +42,7 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().StringSlice("app.emails", []string{}, "Allowed E-Mail addresses or domains (only @domain.org) to log in.")
+	cmd.PersistentFlags().StringSlice("app.emails", []string{}, "Allowed email addresses or domains (only @domain.org) to log in.")
 	if err := viper.BindPFlag("app.emails", cmd.PersistentFlags().Lookup("app.emails")); err != nil {
 		return err
 	}

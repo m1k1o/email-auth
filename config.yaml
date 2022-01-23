@@ -5,7 +5,7 @@ app:
   url: "http://127.0.0.1:8080/"
   # Address, where is HTTP server listening.  
   bind: "127.0.0.1:8080"
-  # Allowed E-Mail addresses or domains (only @domain.org) to log in.  
+  # Allowed email addresses or domains (only @domain.org) to log in.  
   emails:
   - "@test.com"
 

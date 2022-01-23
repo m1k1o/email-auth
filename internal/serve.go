@@ -150,7 +150,7 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 
 		if !s.verifyEmail(email) {
 			logger.Warn().Str("email", email).Msg("email not allowed")
-			s.page.Error(w, "Given E-Mail is not permitted for login, please contact your system administrator.", http.StatusForbidden)
+			s.page.Error(w, "Given email is not permitted for login, please contact your system administrator.", http.StatusForbidden)
 			return
 		}
 
@@ -169,7 +169,7 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 		}
 
 		logger.Info().Str("email", email).Msg("email sent")
-		s.page.Success(w, "Please check your E-Mail inbox for further instructions.")
+		s.page.Success(w, "Please check your email inbox for further instructions.")
 		return
 	}
 

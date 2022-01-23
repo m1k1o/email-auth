@@ -74,13 +74,13 @@ func (manager *Manager) getBody(loginLink string) (string, error) {
 func (manager *Manager) Send(email string, token string, redirectTo string) error {
 	m := mail.NewMessage()
 
-	// Set E-Mail sender
+	// Set email sender
 	m.SetHeader("From", manager.email.From)
 
-	// Set E-Mail receivers
+	// Set email receivers
 	m.SetHeader("To", email)
 
-	// Set E-Mail subject
+	// Set email subject
 	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.app.Name))
 
 	// Get login link
@@ -89,16 +89,16 @@ func (manager *Manager) Send(email string, token string, redirectTo string) erro
 		return err
 	}
 
-	// Get E-mail body
+	// Get email body
 	body, err := manager.getBody(loginLink)
 	if err != nil {
 		return err
 	}
 
-	// Set E-Mail body
+	// Set email body
 	m.SetBody("text/html", body)
 
-	// Now send E-Mail
+	// Now send email
 	return Send(manager.email, m)
 }
 
@@ -117,18 +117,18 @@ func Send(config config.Email, message *mail.Message) error {
 func Test(config config.Email, toEmail string) error {
 	m := mail.NewMessage()
 
-	// Set E-Mail sender
+	// Set email sender
 	m.SetHeader("From", config.From)
 
-	// Set E-Mail receivers
+	// Set email receivers
 	m.SetHeader("To", toEmail)
 
-	// Set E-Mail subject
-	m.SetHeader("Subject", "Test email from E-Mail proxy auth")
+	// Set email subject
+	m.SetHeader("Subject", "Test email from email proxy auth")
 
-	// Set E-Mail body
+	// Set email body
 	m.SetBody("text/plain", "If you see this in your inbox, that means the test was successful.")
 
-	// Now send E-Mail
+	// Now send email
 	return Send(config, m)
 }
