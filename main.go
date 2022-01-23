@@ -67,17 +67,17 @@ func init() {
 
 var secureCookie = false
 
-func loginPage(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "GET" {
+func loginLink(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 		secret := r.URL.Query().Get("login")
-		if secret == "" {
-			wpage.Login(w)
+		if secret == "" || r.Method != "GET" {
+			next.ServeHTTP(w, r)
 			return
 		}
 
 		session, ok := sessions.GetBySecret(secret)
 		if !ok {
-			wpage.Login(w)
+			next.ServeHTTP(w, r)
 			return
 		}
 
@@ -109,6 +109,12 @@ func loginPage(w http.ResponseWriter, r *http.Request) {
 
 		// TODO: Redirect to target app.
 		wpage.Success(w, "You have been succesfully logged in.")
+	}
+}
+
+func loginPage(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "GET" {
+		wpage.Login(w)
 		return
 	}
 
@@ -137,7 +143,7 @@ func loginPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	handle := func(w http.ResponseWriter, r *http.Request) {
 		sessionCookie, err := r.Cookie(sessionCookieName)
 		if err != nil {
 			loginPage(w, r)
@@ -167,7 +173,9 @@ func main() {
 		profile := session.Profile()
 		greet := fmt.Sprintf("Welcome, %s!", profile.Email)
 		wpage.Success(w, greet)
-	})
+	}
+
+	http.HandleFunc("/", loginLink(handle))
 
 	log.Println("Starting http server on", addr)
 	if err := http.ListenAndServe(addr, nil); err != nil {
