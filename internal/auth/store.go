@@ -2,7 +2,6 @@ package auth
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/rs/zerolog/log"
 
@@ -21,7 +20,7 @@ type Store interface {
 	Delete(token string) error
 }
 
-func NewStore(config config.Redis, expiration time.Duration) Store {
+func NewStore(config config.Redis, expiration config.Expiration) Store {
 	if config.Enabled {
 		log.Info().Msgf("using redis on %s", config.Addr)
 		return NewStoreRedis(config, expiration)

@@ -9,6 +9,12 @@ app:
   emails:
   - "@test.com"
 
+  expiration:
+    # Login link expiration in seconds. (default 5 min)
+    link: 300
+    # Session expiration in seconds. (default 14 days)
+    session: 1209600
+
 tmpl:
   # Template path for web page.  
   page: "./tmpl/page.html"
@@ -36,8 +42,6 @@ cookie:
   secure: true
   # A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.  
   httponly: true
-  # Cookie & session expiration in hours.  
-  expiration: 744
 
 redis:
   # If redis should be used or not.

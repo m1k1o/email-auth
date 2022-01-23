@@ -13,10 +13,10 @@ import (
 type storeRedis struct {
 	sync.Mutex
 	client     *redis.Client
-	expiration time.Duration
+	expiration config.Expiration
 }
 
-func NewStoreRedis(config config.Redis, expiration time.Duration) *storeRedis {
+func NewStoreRedis(config config.Redis, expiration config.Expiration) *storeRedis {
 	return &storeRedis{
 		client: redis.NewClient(&redis.Options{
 			Addr:     config.Addr,
@@ -54,7 +54,7 @@ func (s *storeRedis) Get(token string) (*Session, error) {
 	return s.get(token)
 }
 
-func (s *storeRedis) set(session *Session) (string, error) {
+func (s *storeRedis) set(session *Session, expiration time.Duration) (string, error) {
 	token := randomString(16)
 
 	val, err := session.serialize()
@@ -62,7 +62,7 @@ func (s *storeRedis) set(session *Session) (string, error) {
 		return "", err
 	}
 
-	err = s.client.Set(context.Background(), token, val, s.expiration).Err()
+	err = s.client.Set(context.Background(), token, val, expiration).Err()
 	return token, err
 }
 
@@ -72,9 +72,9 @@ func (s *storeRedis) Add(email string) (string, error) {
 
 	return s.set(&Session{
 		email:    email,
-		expires:  time.Now().Add(s.expiration),
+		expires:  time.Now().Add(s.expiration.LoginLink),
 		loggedIn: false,
-	})
+	}, s.expiration.LoginLink)
 }
 
 func (s *storeRedis) Login(token string) (string, error) {
@@ -91,12 +91,13 @@ func (s *storeRedis) Login(token string) (string, error) {
 	}
 
 	session.loggedIn = true
+	session.expires = session.expires.Add(s.expiration.Session)
 
 	if err := s.del(token); err != nil {
 		return "", ErrAlreadyLoggedIn
 	}
 
-	return s.set(session)
+	return s.set(session, s.expiration.Session)
 }
 
 func (s *storeRedis) del(token string) error {

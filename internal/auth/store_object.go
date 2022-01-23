@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"email-proxy-auth/internal/config"
 	"sync"
 	"time"
 )
@@ -8,10 +9,10 @@ import (
 type storeObject struct {
 	sync.Mutex
 	sessions   map[string]*Session
-	expiration time.Duration
+	expiration config.Expiration
 }
 
-func NewStoreObject(expiration time.Duration) *storeObject {
+func NewStoreObject(expiration config.Expiration) *storeObject {
 	return &storeObject{
 		sessions:   map[string]*Session{},
 		expiration: expiration,
@@ -37,7 +38,7 @@ func (s *storeObject) Add(email string) (string, error) {
 	token := randomString(16)
 	s.sessions[token] = &Session{
 		email:    email,
-		expires:  time.Now().Add(s.expiration),
+		expires:  time.Now().Add(s.expiration.LoginLink),
 		loggedIn: false,
 	}
 
@@ -54,6 +55,7 @@ func (s *storeObject) Login(token string) (string, error) {
 	}
 
 	session.loggedIn = true
+	session.expires = session.expires.Add(s.expiration.Session)
 	delete(s.sessions, token)
 
 	token = randomString(16)

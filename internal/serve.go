@@ -114,7 +114,7 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			Name:     s.config.Cookie.Name,
 			Domain:   s.config.Cookie.Domain,
 			Value:    newToken,
-			Expires:  time.Now().Add(s.config.Cookie.Expiration),
+			Expires:  time.Now().Add(s.config.App.Expiration.Session),
 			Secure:   s.config.Cookie.Secure,
 			SameSite: sameSite,
 			HttpOnly: s.config.Cookie.HttpOnly,
@@ -243,7 +243,7 @@ func (s *serve) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func Serve(config config.Serve) (err error) {
 	manager := &serve{
 		config: config,
-		auth:   auth.NewStore(config.Redis, config.Cookie.Expiration),
+		auth:   auth.NewStore(config.Redis, config.App.Expiration),
 	}
 
 	manager.mail, err = mail.New(config.Tmpl.Email, config.App, config.Email)

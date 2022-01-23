@@ -11,11 +11,18 @@ import (
 // app
 //
 
+type Expiration struct {
+	LoginLink time.Duration
+	Session   time.Duration
+}
+
 type App struct {
 	Name   string
 	Url    string
 	Bind   string
 	Emails []string
+
+	Expiration Expiration
 }
 
 func (App) Init(cmd *cobra.Command) error {
@@ -39,6 +46,20 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	//
+	// expiration
+	//
+
+	cmd.PersistentFlags().Int64("app.expiration.link", 300, "Login link expiration in seconds.") // 5 min
+	if err := viper.BindPFlag("app.expiration.link", cmd.PersistentFlags().Lookup("app.expiration.link")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Int64("app.expiration.session", 1209600, "Session expiration in seconds.") // 14 days
+	if err := viper.BindPFlag("app.expiration.session", cmd.PersistentFlags().Lookup("app.expiration.session")); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -47,6 +68,9 @@ func (c *App) Set() {
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
 	c.Emails = viper.GetStringSlice("app.emails")
+
+	c.Expiration.LoginLink = time.Duration(viper.GetInt64("app.expiration.link")) * time.Second
+	c.Expiration.Session = time.Duration(viper.GetInt64("app.expiration.session")) * time.Second
 }
 
 //
@@ -161,11 +185,6 @@ func (Cookie) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().Int("cookie.expiration", 24*31, "Cookie & session expiration in hours.")
-	if err := viper.BindPFlag("cookie.expiration", cmd.PersistentFlags().Lookup("cookie.expiration")); err != nil {
-		return err
-	}
-
 	return nil
 }
 
@@ -174,7 +193,6 @@ func (c *Cookie) Set() {
 	c.Domain = viper.GetString("cookie.domain")
 	c.Secure = viper.GetBool("cookie.secure")
 	c.HttpOnly = viper.GetBool("cookie.httponly")
-	c.Expiration = time.Duration(viper.GetInt("cookie.expiration")) * time.Hour
 }
 
 //
