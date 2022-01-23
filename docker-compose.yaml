@@ -1,0 +1,22 @@
+version: '3.5'
+
+services:
+  app:
+    build: "./"
+    image: email-proxy-auth
+    environment:
+      CFG_APP_BIND: ":8080"
+      CFG_EMAIL_HOST: "smtp4dev"
+      CFG_REDIS_ENABLED: "true"
+      CFG_REDIS_HOST: "redis"
+    ports:
+      - 8080:8080
+
+  redis:
+    image: redis
+  
+  smtp4dev:
+    image: rnwood/smtp4dev:v3
+    ports:
+      - 8081:80
+  
