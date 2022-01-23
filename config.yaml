@@ -1,0 +1,40 @@
+app:
+  # Application Name.  
+  name: "E-mail proxy auth"
+  # Application URL.  
+  url: "http://127.0.0.1:8080/"
+  # Address, where is HTTP server listening.  
+  bind: "127.0.0.1:8080"
+  # Allowed E-Mail addresses or domains (only @domain.org) to log in.  
+  emails:
+  - "@test.com"
+
+tmpl:
+  # Template path for web page.  
+  page: "./tmpl/page.html"
+  # Template path for email.  
+  email: "./tmpl/email.html"
+
+email:
+  # Email from address.  
+  from: "admin@localhost"
+  # Email SMTP host.  
+  host: "127.0.0.1"
+  # Email SMTP port.  
+  port: 25
+  # Email SMTP username.  
+  username: ""
+  # Email SMTP password.  
+  password: ""
+
+cookie:
+  # Cookie name.  
+  name: "MAILSESSION"
+  # Associated domain with the cookie.  
+  domain: ""
+  # A cookie with the Secure attribute is only sent to the server with an encrypted request over the HTTPS protocol.  
+  secure: true
+  # A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.  
+  httponly: true
+  # Cookie & session expiration in hours.  
+  expiration: 744
