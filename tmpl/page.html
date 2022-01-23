@@ -1,7 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>{{ .AppName }}</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
 <style>
 body, html {
   width: 100%;
@@ -79,13 +83,13 @@ button[name=logout] {
 .authenticated svg {
   width: 4em;
 }
-
 </style>
+
 </head>
 <body>
 
 <form action="{{ .AppUrl }}" method="post">
-  <h1> {{ .AppName }} </h1>
+  <h1>{{ .AppName }}</h1>
 
   {{ if .Error }}
     <div class="error"> {{ .Error }} </div>
