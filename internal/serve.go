@@ -78,8 +78,8 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		session, ok := s.auth.GetBySecret(secret)
-		if !ok {
+		session, ok := s.auth.Get(secret)
+		if !ok || session.LoggedIn() {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -88,12 +88,6 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 		if session.Expired() {
 			logger.Warn().Str("email", profile.Email).Msg("link expired")
 			s.page.Error(w, "Link already expired, please request new", http.StatusBadRequest)
-			return
-		}
-
-		if session.LoggedIn() {
-			logger.Warn().Str("email", profile.Email).Msg("link already used")
-			s.page.Error(w, "Link has been already used, please request new", http.StatusConflict)
 			return
 		}
 
@@ -178,8 +172,8 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token := sessionCookie.Value
-	session, ok := s.auth.GetByToken(token)
-	if !ok {
+	session, ok := s.auth.Get(token)
+	if !ok || !session.LoggedIn() {
 		// remove cookie
 		sessionCookie.Expires = time.Unix(0, 0)
 		http.SetCookie(w, sessionCookie)

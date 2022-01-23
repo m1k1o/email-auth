@@ -36,14 +36,14 @@ func New(config Config) (*Manager, error) {
 	}, nil
 }
 
-func (manager *Manager) getLoginLink(session *auth.Session, redirectTo string) (string, error) {
+func (manager *Manager) getLoginLink(token string, redirectTo string) (string, error) {
 	loginLink, err := url.Parse(manager.config.App.Url)
 	if err != nil {
 		return "", err
 	}
 
 	q := loginLink.Query()
-	q.Add("login", session.Secret())
+	q.Add("login", token)
 	if redirectTo != "" {
 		q.Add("to", redirectTo)
 	}
@@ -52,12 +52,7 @@ func (manager *Manager) getLoginLink(session *auth.Session, redirectTo string) (
 	return loginLink.String(), nil
 }
 
-func (manager *Manager) getBody(session *auth.Session, redirectTo string) (string, error) {
-	loginLink, err := manager.getLoginLink(session, redirectTo)
-	if err != nil {
-		return "", err
-	}
-
+func (manager *Manager) getBody(loginLink string) (string, error) {
 	data := struct {
 		AppName   string
 		LoginLink string
@@ -67,7 +62,7 @@ func (manager *Manager) getBody(session *auth.Session, redirectTo string) (strin
 	}
 
 	var body bytes.Buffer
-	err = manager.tmpl.Execute(&body, data)
+	err := manager.tmpl.Execute(&body, data)
 	if err != nil {
 		return "", err
 	}
@@ -76,6 +71,10 @@ func (manager *Manager) getBody(session *auth.Session, redirectTo string) (strin
 }
 
 func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
+	if session.LoggedIn() {
+		return fmt.Errorf("session is already logged in")
+	}
+
 	m := mail.NewMessage()
 
 	// Set E-Mail sender
@@ -87,8 +86,14 @@ func (manager *Manager) Send(session *auth.Session, redirectTo string) error {
 	// Set E-Mail subject
 	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.config.App.Name))
 
+	// Get login link
+	loginLink, err := manager.getLoginLink(session.Token(), redirectTo)
+	if err != nil {
+		return err
+	}
+
 	// Get E-mail body
-	body, err := manager.getBody(session, redirectTo)
+	body, err := manager.getBody(loginLink)
 	if err != nil {
 		return err
 	}
