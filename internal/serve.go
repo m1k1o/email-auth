@@ -31,6 +31,29 @@ func (s *serve) newLogger(r *http.Request) zerolog.Logger {
 		Logger()
 }
 
+func (s *serve) getRedirectLink(r *http.Request) string {
+	redirectTo := r.URL.Query().Get("to")
+
+	if redirectTo == "" {
+		redirectTo = r.Referer()
+	}
+
+	if redirectTo == "" {
+		return s.config.App.Url
+	}
+
+	loginLink, err := url.Parse(s.config.App.Url)
+	if err != nil {
+		return s.config.App.Url
+	}
+
+	q := loginLink.Query()
+	q.Add("to", redirectTo)
+	loginLink.RawQuery = q.Encode()
+
+	return loginLink.String()
+}
+
 func (s *serve) verifyRedirectLink(redirectTo string) bool {
 	if redirectTo == "" {
 		return false
@@ -247,6 +270,27 @@ func (s *serve) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
+func (s *serve) Verify(w http.ResponseWriter, r *http.Request) {
+	redirectTo := s.getRedirectLink(r)
+
+	sessionCookie, err := r.Cookie(s.config.Cookie.Name)
+	if err != nil {
+		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+		return
+	}
+
+	token := sessionCookie.Value
+	session, err := s.auth.Get(token)
+	if err != nil || !session.LoggedIn() || session.Expired() {
+		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("X-Auth-Email", session.Email())
+	w.Write([]byte("OK"))
+}
+
 func Serve(config config.Serve) (err error) {
 	manager := &serve{
 		config: config,
@@ -264,6 +308,7 @@ func Serve(config config.Serve) (err error) {
 	}
 
 	http.Handle("/", manager)
+	http.HandleFunc("/verify", manager.Verify)
 
 	log.Info().Msgf("starting http server on %s", config.App.Bind)
 	return http.ListenAndServe(config.App.Bind, nil)

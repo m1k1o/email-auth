@@ -35,7 +35,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.email-proxy-auth.rule=Path(`/auth`)"
       - "traefik.http.routers.email-proxy-auth.entrypoints=https"
-      - "traefik.http.middlewares.email-proxy-auth.forwardauth.address=http://email-proxy-auth:8080/"
+      - "traefik.http.middlewares.email-proxy-auth.forwardauth.address=http://email-proxy-auth:8080/verify"
       - "traefik.http.middlewares.email-proxy-auth.forwardauth.trustForwardHeader=true"
       - "traefik.http.middlewares.email-proxy-auth.forwardauth.authResponseHeaders=X-Auth-Email"
 
