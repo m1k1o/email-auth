@@ -46,6 +46,8 @@ func (s *serve) verifyRedirectLink(redirectTo string) bool {
 }
 
 func (s *serve) verifyEmail(email string) bool {
+	email = strings.ToLower(email)
+
 	// unspecified - allowed all
 	if len(s.config.App.Emails) == 0 {
 		return true
@@ -55,6 +57,8 @@ func (s *serve) verifyEmail(email string) bool {
 	_, domain := components[0], components[1]
 
 	for _, rule := range s.config.App.Emails {
+		rule = strings.ToLower(rule)
+
 		// exact match
 		if rule == email {
 			return true
