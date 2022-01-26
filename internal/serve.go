@@ -73,6 +73,29 @@ func (s *serve) verifyEmail(email string) bool {
 	return false
 }
 
+func (s *serve) setCookie(w http.ResponseWriter, token string) {
+	var expires time.Time
+	if token == "" {
+		expires = time.Unix(0, 0)
+	} else {
+		expires = time.Now().Add(s.config.App.Expiration.Session)
+	}
+
+	sameSite := http.SameSiteDefaultMode
+	if s.config.Cookie.Secure {
+		sameSite = http.SameSiteNoneMode
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     s.config.Cookie.Name,
+		Domain:   s.config.Cookie.Domain,
+		Value:    token,
+		Expires:  expires,
+		Secure:   s.config.Cookie.Secure,
+		SameSite: sameSite,
+		HttpOnly: s.config.Cookie.HttpOnly,
+	})
+}
 func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := s.newLogger(r)
@@ -109,20 +132,7 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		sameSite := http.SameSiteDefaultMode
-		if s.config.Cookie.Secure {
-			sameSite = http.SameSiteNoneMode
-		}
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     s.config.Cookie.Name,
-			Domain:   s.config.Cookie.Domain,
-			Value:    newToken,
-			Expires:  time.Now().Add(s.config.App.Expiration.Session),
-			Secure:   s.config.Cookie.Secure,
-			SameSite: sameSite,
-			HttpOnly: s.config.Cookie.HttpOnly,
-		})
+		s.setCookie(w, newToken)
 
 		to := r.URL.Query().Get("to")
 		if !s.verifyRedirectLink(to) {
@@ -194,8 +204,7 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 	session, err := s.auth.Get(token)
 	if errors.Is(err, auth.ErrTokenNotFound) || err == nil && !session.LoggedIn() {
 		// remove cookie
-		sessionCookie.Expires = time.Unix(0, 0)
-		http.SetCookie(w, sessionCookie)
+		s.setCookie(w, "")
 
 		logger.Warn().Msg("session token not found")
 		s.page.Error(w, "Session token not found, please log in again.", http.StatusUnauthorized)
@@ -210,8 +219,7 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 
 	if session.Expired() {
 		// remove cookie
-		sessionCookie.Expires = time.Unix(0, 0)
-		http.SetCookie(w, sessionCookie)
+		s.setCookie(w, "")
 
 		logger.Warn().Str("email", session.Email()).Msg("session expired")
 		s.page.Error(w, "Session expried, please log in again.", http.StatusForbidden)
@@ -220,8 +228,7 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "POST" && r.FormValue("logout") != "" {
 		// remove cookie
-		sessionCookie.Expires = time.Unix(0, 0)
-		http.SetCookie(w, sessionCookie)
+		s.setCookie(w, "")
 
 		err := s.auth.Delete(token)
 		if err != nil {
