@@ -242,7 +242,6 @@ func (s *serve) mainPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("X-Auth-Email", session.Email())
 	s.page.LoggedIn(w)
 }
 
