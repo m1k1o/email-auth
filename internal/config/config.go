@@ -2,6 +2,8 @@ package config
 
 import (
 	"fmt"
+	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -24,6 +26,39 @@ type App struct {
 	Emails []string
 
 	Expiration Expiration
+}
+
+func (c *App) GetUrl(r *http.Request) string {
+	redirectTo := r.URL.Query().Get("to")
+
+	if redirectTo == "" {
+		redirectTo = r.Referer()
+	}
+
+	url, err := c.CreateUrl("", redirectTo)
+	if err != nil {
+		return c.Url
+	}
+
+	return url
+}
+
+func (c *App) CreateUrl(token, redirectTo string) (string, error) {
+	link, err := url.Parse(c.Url)
+	if err != nil {
+		return "", err
+	}
+
+	q := link.Query()
+	if redirectTo != "" {
+		q.Add("token", token)
+	}
+	if redirectTo != "" {
+		q.Add("to", redirectTo)
+	}
+	link.RawQuery = q.Encode()
+
+	return link.String(), nil
 }
 
 func (App) Init(cmd *cobra.Command) error {

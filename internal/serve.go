@@ -31,29 +31,6 @@ func (s *serve) newLogger(r *http.Request) zerolog.Logger {
 		Logger()
 }
 
-func (s *serve) getRedirectLink(r *http.Request) string {
-	redirectTo := r.URL.Query().Get("to")
-
-	if redirectTo == "" {
-		redirectTo = r.Referer()
-	}
-
-	if redirectTo == "" {
-		return s.config.App.Url
-	}
-
-	loginLink, err := url.Parse(s.config.App.Url)
-	if err != nil {
-		return s.config.App.Url
-	}
-
-	q := loginLink.Query()
-	q.Add("to", redirectTo)
-	loginLink.RawQuery = q.Encode()
-
-	return loginLink.String()
-}
-
 func (s *serve) verifyRedirectLink(redirectTo string) bool {
 	if redirectTo == "" {
 		return false
@@ -100,7 +77,7 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := s.newLogger(r)
 
-		token := r.URL.Query().Get("login")
+		token := r.URL.Query().Get("token")
 		if token == "" || r.Method != "GET" {
 			next.ServeHTTP(w, r)
 			return
@@ -159,14 +136,10 @@ func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 
 func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 	logger := s.newLogger(r)
-	redirectTo := r.URL.Query().Get("to")
-	if redirectTo == "" {
-		redirectTo = r.Referer()
-	}
 
 	if r.Method == "GET" {
 		logger.Debug().Msg("requested login page")
-		s.page.Login(w, redirectTo)
+		s.page.Login(w, r)
 		return
 	}
 
@@ -191,6 +164,7 @@ func (s *serve) loginPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		redirectTo := r.URL.Query().Get("to")
 		err = s.mail.Send(email, token, redirectTo)
 		if err != nil {
 			logger.Err(err).Str("email", email).Msg("unable to send email")
@@ -271,18 +245,18 @@ func (s *serve) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *serve) Verify(w http.ResponseWriter, r *http.Request) {
-	redirectTo := s.getRedirectLink(r)
+	appUrl := s.config.App.GetUrl(r)
 
 	sessionCookie, err := r.Cookie(s.config.Cookie.Name)
 	if err != nil {
-		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, appUrl, http.StatusTemporaryRedirect)
 		return
 	}
 
 	token := sessionCookie.Value
 	session, err := s.auth.Get(token)
 	if err != nil || !session.LoggedIn() || session.Expired() {
-		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+		http.Redirect(w, r, appUrl, http.StatusTemporaryRedirect)
 		return
 	}
 

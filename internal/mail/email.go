@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"html/template"
 	"io/ioutil"
-	"net/url"
 
 	"gopkg.in/mail.v2"
 
@@ -37,22 +36,6 @@ func New(templatePath string, app config.App, email config.Email) (*Manager, err
 	}, nil
 }
 
-func (manager *Manager) getLoginLink(token string, redirectTo string) (string, error) {
-	loginLink, err := url.Parse(manager.app.Url)
-	if err != nil {
-		return "", err
-	}
-
-	q := loginLink.Query()
-	q.Add("login", token)
-	if redirectTo != "" {
-		q.Add("to", redirectTo)
-	}
-	loginLink.RawQuery = q.Encode()
-
-	return loginLink.String(), nil
-}
-
 func (manager *Manager) getBody(loginLink string) (string, error) {
 	data := struct {
 		AppName   string
@@ -71,7 +54,7 @@ func (manager *Manager) getBody(loginLink string) (string, error) {
 	return body.String(), err
 }
 
-func (manager *Manager) Send(email string, token string, redirectTo string) error {
+func (manager *Manager) Send(email, token, redirectTo string) error {
 	m := mail.NewMessage()
 
 	// Set email sender
@@ -84,7 +67,7 @@ func (manager *Manager) Send(email string, token string, redirectTo string) erro
 	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.app.Name))
 
 	// Get login link
-	loginLink, err := manager.getLoginLink(token, redirectTo)
+	loginLink, err := manager.app.CreateUrl(token, redirectTo)
 	if err != nil {
 		return err
 	}
