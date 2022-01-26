@@ -271,24 +271,39 @@ func (s *serve) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *serve) Verify(w http.ResponseWriter, r *http.Request) {
-	appUrl := s.config.App.GetUrl(r)
+	var email string
 
-	sessionCookie, err := r.Cookie(s.config.Cookie.Name)
-	if err != nil {
-		http.Redirect(w, r, appUrl, http.StatusTemporaryRedirect)
-		return
-	}
+	username, password, ok := r.BasicAuth()
+	if ok {
+		pass, found := s.config.App.Auths[username]
+		if !found || pass != password {
+			http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+			return
+		}
 
-	token := sessionCookie.Value
-	session, err := s.auth.Get(token)
-	if err != nil || !session.LoggedIn() || session.Expired() {
-		http.Redirect(w, r, appUrl, http.StatusTemporaryRedirect)
-		return
+		email = username
+	} else {
+		appUrl := s.config.App.GetUrl(r)
+
+		sessionCookie, err := r.Cookie(s.config.Cookie.Name)
+		if err != nil {
+			http.Redirect(w, r, appUrl, http.StatusTemporaryRedirect)
+			return
+		}
+
+		token := sessionCookie.Value
+		session, err := s.auth.Get(token)
+		if err != nil || !session.LoggedIn() || session.Expired() {
+			http.Redirect(w, r, appUrl, http.StatusTemporaryRedirect)
+			return
+		}
+
+		email = session.Email()
 	}
 
 	w.WriteHeader(http.StatusOK)
 	if s.config.App.Header.Enabled {
-		w.Header().Set(s.config.App.Header.Name, session.Email())
+		w.Header().Set(s.config.App.Header.Name, email)
 	}
 	w.Write([]byte("OK"))
 }

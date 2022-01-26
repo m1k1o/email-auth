@@ -29,6 +29,7 @@ type App struct {
 	Url    string
 	Bind   string
 	Proxy  bool
+	Auths  map[string]string
 	Emails []string
 
 	Header     Header
@@ -130,6 +131,7 @@ func (c *App) Set() {
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
 	c.Proxy = viper.GetBool("app.proxy")
+	c.Auths = viper.GetStringMapString("app.auths")
 	c.Emails = viper.GetStringSlice("app.emails")
 
 	c.Header.Enabled = viper.GetBool("app.header.enabled")
