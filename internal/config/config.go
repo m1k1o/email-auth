@@ -28,6 +28,7 @@ type App struct {
 	Name   string
 	Url    string
 	Bind   string
+	Proxy  bool
 	Emails []string
 
 	Header     Header
@@ -83,6 +84,11 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().Bool("app.proxy", false, "Trust proxy X-Forwarded-For and X-Real-Ip headers.")
+	if err := viper.BindPFlag("app.proxy", cmd.PersistentFlags().Lookup("app.proxy")); err != nil {
+		return err
+	}
+
 	cmd.PersistentFlags().StringSlice("app.emails", []string{}, "Allowed email addresses or domains (only @domain.org) to log in.")
 	if err := viper.BindPFlag("app.emails", cmd.PersistentFlags().Lookup("app.emails")); err != nil {
 		return err
@@ -123,6 +129,7 @@ func (c *App) Set() {
 	c.Name = viper.GetString("app.name")
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
+	c.Proxy = viper.GetBool("app.proxy")
 	c.Emails = viper.GetStringSlice("app.emails")
 
 	c.Header.Enabled = viper.GetBool("app.header.enabled")

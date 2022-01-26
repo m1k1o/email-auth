@@ -2,6 +2,7 @@ package internal
 
 import (
 	"errors"
+	"net"
 	"net/http"
 	"net/url"
 	"strings"
@@ -25,8 +26,27 @@ type serve struct {
 }
 
 func (s *serve) newLogger(r *http.Request) zerolog.Logger {
+	var ip string
+
+	if s.config.App.Proxy {
+		if xrip := r.Header.Get("X-Real-IP"); xrip != "" {
+			ip = xrip
+		} else if xff := r.Header.Get("X-Forwarded-For"); xff != "" {
+			i := strings.Index(xff, ",")
+			if i == -1 {
+				i = len(xff)
+			}
+			ip = xff[:i]
+		}
+	}
+
+	if ip == "" || net.ParseIP(ip) == nil {
+		// TODO: Remove port part.
+		ip = r.RemoteAddr
+	}
+
 	return log.With().
-		Str("remote-addr", r.RemoteAddr).
+		Str("remote-addr", ip).
 		Str("user-agent", r.UserAgent()).
 		Logger()
 }
