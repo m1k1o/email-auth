@@ -9,6 +9,12 @@ app:
   emails:
   - "@test.com"
 
+  header:
+    # If authentication header should be enabled.  
+    enabled: true
+    # Authentication header name.  
+    name: "X-Auth-Email"
+
   expiration:
     # Login link expiration in seconds. (default 5 min)
     link: 300

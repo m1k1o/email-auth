@@ -267,7 +267,9 @@ func (s *serve) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	w.Header().Set("X-Auth-Email", session.Email())
+	if s.config.App.Header.Enabled {
+		w.Header().Set(s.config.App.Header.Name, session.Email())
+	}
 	w.Write([]byte("OK"))
 }
 

@@ -14,6 +14,11 @@ import (
 // app
 //
 
+type Header struct {
+	Enabled bool
+	Name    string
+}
+
 type Expiration struct {
 	LoginLink time.Duration
 	Session   time.Duration
@@ -25,6 +30,7 @@ type App struct {
 	Bind   string
 	Emails []string
 
+	Header     Header
 	Expiration Expiration
 }
 
@@ -83,6 +89,20 @@ func (App) Init(cmd *cobra.Command) error {
 	}
 
 	//
+	// header
+	//
+
+	cmd.PersistentFlags().Bool("app.header.enabled", true, "If authentication header should be enabled.")
+	if err := viper.BindPFlag("app.header.enabled", cmd.PersistentFlags().Lookup("app.header.enabled")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("app.header.name", "X-Auth-Email", "Authentication header name.")
+	if err := viper.BindPFlag("app.header.name", cmd.PersistentFlags().Lookup("app.header.name")); err != nil {
+		return err
+	}
+
+	//
 	// expiration
 	//
 
@@ -104,6 +124,9 @@ func (c *App) Set() {
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
 	c.Emails = viper.GetStringSlice("app.emails")
+
+	c.Header.Enabled = viper.GetBool("app.header.enabled")
+	c.Header.Name = viper.GetString("app.header.name")
 
 	c.Expiration.LoginLink = time.Duration(viper.GetInt64("app.expiration.link")) * time.Second
 	c.Expiration.Session = time.Duration(viper.GetInt64("app.expiration.session")) * time.Second
