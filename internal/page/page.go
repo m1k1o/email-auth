@@ -5,7 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"email-proxy-auth/internal/config"
+	"github.com/m1k1o/email-auth/internal/config"
 
 	"github.com/rs/zerolog/log"
 )

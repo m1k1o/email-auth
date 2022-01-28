@@ -70,7 +70,7 @@ func (c *App) CreateUrl(token, redirectTo string) (string, error) {
 }
 
 func (App) Init(cmd *cobra.Command) error {
-	cmd.PersistentFlags().String("app.name", "E-mail proxy auth", "Application Name.")
+	cmd.PersistentFlags().String("app.name", "E-mail auth", "Application Name.")
 	if err := viper.BindPFlag("app.name", cmd.PersistentFlags().Lookup("app.name")); err != nil {
 		return err
 	}

@@ -7,7 +7,7 @@ import (
 
 	"github.com/go-redis/redis/v8"
 
-	"email-proxy-auth/internal/config"
+	"github.com/m1k1o/email-auth/internal/config"
 )
 
 type storeRedis struct {

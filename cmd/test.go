@@ -4,8 +4,8 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
-	"email-proxy-auth/internal/config"
-	"email-proxy-auth/internal/mail"
+	"github.com/m1k1o/email-auth/internal/config"
+	"github.com/m1k1o/email-auth/internal/mail"
 )
 
 func init() {

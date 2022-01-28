@@ -1,4 +1,4 @@
-module email-proxy-auth
+module github.com/m1k1o/email-auth
 
 go 1.17
 

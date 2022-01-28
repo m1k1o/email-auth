@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . .
 RUN go get -v -t -d .; \
-    CGO_ENABLED=0 go build -o email-proxy-auth main.go
+    CGO_ENABLED=0 go build -o email-auth main.go
 
 #
 # STAGE 2: build a small image
@@ -14,10 +14,10 @@ RUN go get -v -t -d .; \
 FROM scratch
 WORKDIR /app
 
-COPY --from=builder /app/email-proxy-auth /usr/bin/email-proxy-auth
+COPY --from=builder /app/email-auth /usr/bin/email-auth
 COPY tmpl tmpl
 
-ENTRYPOINT [ "email-proxy-auth" ]
+ENTRYPOINT [ "email-auth" ]
 
 EXPOSE 8080
 

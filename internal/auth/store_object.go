@@ -1,9 +1,10 @@
 package auth
 
 import (
-	"email-proxy-auth/internal/config"
 	"sync"
 	"time"
+
+	"github.com/m1k1o/email-auth/internal/config"
 )
 
 type storeObject struct {

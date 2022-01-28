@@ -18,16 +18,16 @@ import (
 )
 
 // Default configuration path
-const defCfgPath = "/etc/email-proxy-auth/"
+const defCfgPath = "/etc/github.com/m1k1o/email-auth/"
 
 // ENV prefix for configuration
 const envPrefix = "CFG"
 
 var rootCmd = &cobra.Command{
-	Use:     "email-proxy-auth",
-	Short:   "Proxy authentication using email.",
-	Long:    `Proxy authentication using email.`,
-	Version: "0.0.1",
+	Use:     "email-auth",
+	Short:   "Authentication using email.",
+	Long:    `Authentication using email.`,
+	Version: "1.0.0",
 }
 
 var onInitialize []func()

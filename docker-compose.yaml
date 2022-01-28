@@ -23,9 +23,9 @@ services:
       - "--log=true"
       - "--log.level=DEBUG"
 
-  email-proxy-auth:
+  email-auth:
     build: "./"
-    image: email-proxy-auth
+    image: email-auth
     environment:
       CFG_APP_URL: "https://127.0.0.1/auth"
       CFG_EMAIL_HOST: "smtp4dev"
@@ -33,11 +33,11 @@ services:
       CFG_REDIS_HOST: "redis"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.email-proxy-auth.rule=Path(`/auth`)"
-      - "traefik.http.routers.email-proxy-auth.entrypoints=https"
-      - "traefik.http.middlewares.email-proxy-auth.forwardauth.address=http://email-proxy-auth:8080/verify"
-      - "traefik.http.middlewares.email-proxy-auth.forwardauth.trustForwardHeader=true"
-      - "traefik.http.middlewares.email-proxy-auth.forwardauth.authResponseHeaders=X-Auth-Email"
+      - "traefik.http.routers.email-auth.rule=Path(`/auth`)"
+      - "traefik.http.routers.email-auth.entrypoints=https"
+      - "traefik.http.middlewares.email-auth.forwardauth.address=http://email-auth:8080/verify"
+      - "traefik.http.middlewares.email-auth.forwardauth.trustForwardHeader=true"
+      - "traefik.http.middlewares.email-auth.forwardauth.authResponseHeaders=X-Auth-Email"
 
   redis:
     image: redis
@@ -48,7 +48,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.protected.rule=PathPrefix(`/protected`)"
       - "traefik.http.routers.protected.entrypoints=https"
-      - "traefik.http.routers.protected.middlewares=email-proxy-auth"
+      - "traefik.http.routers.protected.middlewares=email-auth"
 
   smtp4dev:
     image: rnwood/smtp4dev:v3

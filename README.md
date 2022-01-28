@@ -1,6 +1,6 @@
-# email proxy auth
+# email auth
 
-A simple passwordless proxy authentication middleware that uses only email as the authentication provider.
+A simple passwordless authentication middleware that uses only email as the authentication provider.
 
 ## Motivation
 

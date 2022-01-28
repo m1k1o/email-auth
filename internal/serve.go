@@ -11,10 +11,10 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 
-	"email-proxy-auth/internal/auth"
-	"email-proxy-auth/internal/config"
-	"email-proxy-auth/internal/mail"
-	"email-proxy-auth/internal/page"
+	"github.com/m1k1o/email-auth/internal/auth"
+	"github.com/m1k1o/email-auth/internal/config"
+	"github.com/m1k1o/email-auth/internal/mail"
+	"github.com/m1k1o/email-auth/internal/page"
 )
 
 type serve struct {

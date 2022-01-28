@@ -1,6 +1,6 @@
 app:
   # Application Name.
-  name: "E-mail proxy auth"
+  name: "E-mail auth"
   # Application URL.
   url: "http://127.0.0.1:8080/"
   # Address, where is HTTP server listening.

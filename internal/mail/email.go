@@ -9,7 +9,7 @@ import (
 
 	"gopkg.in/mail.v2"
 
-	"email-proxy-auth/internal/config"
+	"github.com/m1k1o/email-auth/internal/config"
 )
 
 type Manager struct {
@@ -107,7 +107,7 @@ func Test(config config.Email, toEmail string) error {
 	m.SetHeader("To", toEmail)
 
 	// Set email subject
-	m.SetHeader("Subject", "Test email from email proxy auth")
+	m.SetHeader("Subject", "Test email from email-auth")
 
 	// Set email body
 	m.SetBody("text/plain", "If you see this in your inbox, that means the test was successful.")
