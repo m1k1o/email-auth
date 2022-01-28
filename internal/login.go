@@ -118,7 +118,7 @@ func (l *login) setCookie(w http.ResponseWriter, token string) {
 	})
 }
 
-func (l *login) LoginLink(next http.HandlerFunc) http.HandlerFunc {
+func (l *login) linkAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := l.newLogger(r)
 
@@ -166,7 +166,7 @@ func (l *login) LoginLink(next http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-func (l *login) LoginPage(w http.ResponseWriter, r *http.Request) {
+func (l *login) mainPage(w http.ResponseWriter, r *http.Request) {
 	logger := l.newLogger(r)
 
 	if r.Method == "GET" {
@@ -240,8 +240,8 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if errors.Is(err, ErrNoAuthentication) {
-		handler := http.HandlerFunc(l.LoginPage)
-		handler = l.LoginLink(handler)
+		handler := http.HandlerFunc(l.mainPage)
+		handler = l.linkAction(handler)
 		handler.ServeHTTP(w, r)
 		return
 	}
