@@ -58,7 +58,7 @@ func (c *App) CreateUrl(token, redirectTo string) (string, error) {
 	}
 
 	q := link.Query()
-	if redirectTo != "" {
+	if token != "" {
 		q.Add("token", token)
 	}
 	if redirectTo != "" {
