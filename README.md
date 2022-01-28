@@ -15,6 +15,7 @@ I created this simple service that prompts for a user's email, checks it against
 - Plug & Play - you only need to provide access to SMTP server.
 - Easy HTML template customization.
 - Optional Redis support.
+- Optional API access using HTTP Basic Auth.
 
 ### Login page
 ![Login page](docs/login.png)
