@@ -96,6 +96,7 @@ button[name=logout] {
     <a href="{{ .AppUrl }}">Reload page</a>
   {{ else if .Success }}
     <div class="success"> {{ .Success }} </div>
+    <a href="{{ .AppUrl }}">Reload page</a>
   {{ else }}
     {{ if .LoggedIn }}
       <div class="authenticated">
