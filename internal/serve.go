@@ -116,6 +116,7 @@ func (s *serve) setCookie(w http.ResponseWriter, token string) {
 		HttpOnly: s.config.Cookie.HttpOnly,
 	})
 }
+
 func (s *serve) loginAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := s.newLogger(r)

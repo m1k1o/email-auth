@@ -94,7 +94,7 @@ func (s *storeRedis) Login(token string) (string, error) {
 	session.expires = session.expires.Add(s.expiration.Session)
 
 	if err := s.del(token); err != nil {
-		return "", ErrAlreadyLoggedIn
+		return "", err
 	}
 
 	return s.set(session, s.expiration.Session)

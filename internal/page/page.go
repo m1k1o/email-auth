@@ -40,55 +40,49 @@ func New(templatePath string, app config.App) (*Manager, error) {
 	}, nil
 }
 
-func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
-	w.WriteHeader(code)
-
-	if err := manager.tmpl.Execute(w, Template{
-		AppName: manager.app.Name,
-		AppUrl:  manager.app.Url,
-		Error:   msg,
-	}); err != nil {
+func (manager *Manager) serve(w http.ResponseWriter, template Template) {
+	err := manager.tmpl.Execute(w, template)
+	if err != nil {
 		log.Err(err).Msg("error while serving page")
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
 	}
 }
 
+func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
+	w.WriteHeader(code)
+
+	manager.serve(w, Template{
+		AppName: manager.app.Name,
+		AppUrl:  manager.app.Url,
+		Error:   msg,
+	})
+}
+
 func (manager *Manager) Success(w http.ResponseWriter, msg string) {
-	if err := manager.tmpl.Execute(w, Template{
+	w.WriteHeader(http.StatusOK)
+
+	manager.serve(w, Template{
 		AppName: manager.app.Name,
 		AppUrl:  manager.app.Url,
 		Success: msg,
-	}); err != nil {
-		log.Err(err).Msg("error while serving page")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	})
 }
 
 func (manager *Manager) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusUnauthorized)
 
-	if err := manager.tmpl.Execute(w, Template{
+	manager.serve(w, Template{
 		AppName: manager.app.Name,
 		AppUrl:  manager.app.GetUrl(r),
-	}); err != nil {
-		log.Err(err).Msg("error while serving page")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	})
 }
 
 func (manager *Manager) LoggedIn(w http.ResponseWriter) {
 	w.WriteHeader(http.StatusOK)
 
-	if err := manager.tmpl.Execute(w, Template{
+	manager.serve(w, Template{
 		AppName:  manager.app.Name,
 		AppUrl:   manager.app.Url,
 		LoggedIn: true,
-	}); err != nil {
-		log.Err(err).Msg("error while serving page")
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	})
 }

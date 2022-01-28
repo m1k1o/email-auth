@@ -1,23 +1,23 @@
 app:
-  # Application Name.  
+  # Application Name.
   name: "E-mail proxy auth"
-  # Application URL.  
+  # Application URL.
   url: "http://127.0.0.1:8080/"
-  # Address, where is HTTP server listening.  
+  # Address, where is HTTP server listening.
   bind: "127.0.0.1:8080"
   # Trust proxy X-Forwarded-For and X-Real-Ip headers.
   proxy: false
   # Authentication users using HTTP Basic Auth (usually for API).
   auths:
     username: password
-  # Allowed email addresses or domains (only @domain.org) to log in.  
+  # Allowed email addresses or domains (only @domain.org) to log in.
   emails:
   - "@test.com"
 
   header:
-    # If authentication header should be enabled.  
+    # If authentication header should be enabled.
     enabled: true
-    # Authentication header name.  
+    # Authentication header name.
     name: "X-Auth-Email"
 
   expiration:
@@ -27,31 +27,31 @@ app:
     session: 1209600
 
 tmpl:
-  # Template path for web page.  
+  # Template path for web page.
   page: "./tmpl/page.html"
-  # Template path for email.  
+  # Template path for email.
   email: "./tmpl/email.html"
 
 email:
-  # Email from address.  
+  # Email from address.
   from: "admin@localhost"
-  # Email SMTP host.  
+  # Email SMTP host.
   host: "127.0.0.1"
-  # Email SMTP port.  
+  # Email SMTP port.
   port: 25
-  # Email SMTP username.  
+  # Email SMTP username.
   username: ""
-  # Email SMTP password.  
+  # Email SMTP password.
   password: ""
 
 cookie:
-  # Cookie name.  
+  # Cookie name.
   name: "MAILSESSION"
-  # Associated domain with the cookie.  
+  # Associated domain with the cookie.
   domain: ""
-  # A cookie with the Secure attribute is only sent to the server with an encrypted request over the HTTPS protocol.  
+  # A cookie with the Secure attribute is only sent to the server with an encrypted request over the HTTPS protocol.
   secure: true
-  # A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.  
+  # A cookie with the HttpOnly attribute is inaccessible to the JavaScript Document.cookie API; it's only sent to the server.
   httponly: true
 
 redis:
@@ -65,4 +65,3 @@ redis:
   password: ""
   # Redis database.
   database: 0
-  

@@ -41,7 +41,7 @@ services:
 
   redis:
     image: redis
-  
+
   protected:
     image: nginx
     labels:
