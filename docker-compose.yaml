@@ -24,8 +24,7 @@ services:
       - "--log.level=DEBUG"
 
   email-auth:
-    build: "./"
-    image: email-auth
+    image: ghcr.io/m1k1o/email-auth:1.0
     environment:
       CFG_APP_URL: "https://127.0.0.1/auth"
       CFG_EMAIL_HOST: "smtp4dev"
