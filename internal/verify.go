@@ -125,14 +125,48 @@ func (v *verify) WithAuthentication(next http.HandlerFunc) http.HandlerFunc {
 
 func (v *verify) WithRedirect(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := AuthFromContext(r.Context())
-
-		if err != nil {
-			http.Redirect(w, r, v.app.GetUrl(r), http.StatusTemporaryRedirect)
+		// is authenticated
+		if _, err := AuthFromContext(r.Context()); err == nil {
+			next.ServeHTTP(w, r)
 			return
 		}
 
-		next.ServeHTTP(w, r)
+		if !v.app.Proxy {
+			http.Redirect(w, r, v.app.Url, http.StatusTemporaryRedirect)
+			return
+		}
+
+		targetUrl := r.Header.Get("X-Original-URL")
+		if targetUrl != "" {
+			redirectTo, err := v.app.CreateUrl("", targetUrl)
+			if err != nil {
+				redirectTo = v.app.Url
+			}
+
+			http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
+			return
+		}
+
+		proto := r.Header.Get("X-Forwarded-Proto")
+		host := r.Header.Get("X-Forwarded-Host")
+		port := r.Header.Get("X-Forwarded-Port")
+		if proto == "" || host == "" || port == "" {
+			http.Redirect(w, r, v.app.Url, http.StatusTemporaryRedirect)
+			return
+		}
+
+		targetUrl = proto + "://" + host
+		if (port != "80" || proto != "http") && (port != "443" || proto != "https") {
+			targetUrl += ":" + port
+		}
+		targetUrl += r.Header.Get("X-Forwarded-Uri")
+
+		redirectTo, err := v.app.CreateUrl("", targetUrl)
+		if err != nil {
+			redirectTo = v.app.Url
+		}
+
+		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
 	}
 }
 
