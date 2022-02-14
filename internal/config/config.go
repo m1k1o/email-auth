@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
@@ -114,8 +115,18 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().String("app.emails_file", "", "Path to a file, where additional emails are stored, deparated by newline.")
+	if err := viper.BindPFlag("app.emails_file", cmd.PersistentFlags().Lookup("app.emails_file")); err != nil {
+		return err
+	}
+
 	cmd.PersistentFlags().StringSlice("app.users", []string{}, "Users authentication using HTTP Basic Auth, with bcrypt hashes.")
 	if err := viper.BindPFlag("app.users", cmd.PersistentFlags().Lookup("app.users")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("app.users_file", "", "Path to a file, where additional users are stored, deparated by newline.")
+	if err := viper.BindPFlag("app.users_file", cmd.PersistentFlags().Lookup("app.users_file")); err != nil {
 		return err
 	}
 
@@ -155,10 +166,56 @@ func (c *App) Set() {
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
 	c.Proxy = viper.GetBool("app.proxy")
-	c.Emails = viper.GetStringSlice("app.emails")
 
+	// get emails from config
+	emails := viper.GetStringSlice("app.emails")
+
+	// load emails from a file
+	emailsFile := viper.GetString("app.emails_file")
+	if emailsFile != "" {
+		emailsBytes, err := ioutil.ReadFile(emailsFile)
+		if err != nil {
+			log.Panic().Err(err).Msgf("error opening emails file")
+		}
+
+		emails = append(emails,
+			strings.Split(string(emailsBytes), "\n")...)
+	}
+
+	// get users from config
+	users := viper.GetStringSlice("app.users")
+
+	// load users from a file
+	usersFile := viper.GetString("app.users_file")
+	if usersFile != "" {
+		usersBytes, err := ioutil.ReadFile(usersFile)
+		if err != nil {
+			log.Panic().Err(err).Msgf("error opening users file")
+		}
+
+		users = append(users,
+			strings.Split(string(usersBytes), "\n")...)
+	}
+
+	// clean up emails
+	c.Emails = []string{}
+	for _, email := range emails {
+		email := strings.TrimSpace(email)
+		if email == "" {
+			continue
+		}
+
+		c.Emails = append(c.Emails, email)
+	}
+
+	// convert users to a map
 	c.Users = map[string]string{}
-	for _, user := range viper.GetStringSlice("app.users") {
+	for _, user := range users {
+		user := strings.TrimSpace(user)
+		if user == "" {
+			continue
+		}
+
 		split := strings.Split(user, ":")
 		if len(split) != 2 {
 			log.Panic().Msgf("error parsing BasicUser: %v", user)
