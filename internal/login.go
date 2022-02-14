@@ -263,7 +263,7 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		l.setCookie(w, "")
 
 		logger.Warn().Msg("session not found")
-		l.page.Error(w, "Session not found, please log in again.", http.StatusUnauthorized)
+		l.page.Error(w, "Session not found or expired, please log in again.", http.StatusUnauthorized)
 		return
 	}
 
