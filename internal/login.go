@@ -119,6 +119,11 @@ func (l *login) setCookie(w http.ResponseWriter, token string) {
 	})
 }
 
+func (l *login) askForBasicAuth(w http.ResponseWriter) {
+	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+	l.page.Error(w, "Unauthorized.", http.StatusUnauthorized)
+}
+
 func (l *login) linkAction(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		logger := l.newLogger(r)
@@ -172,8 +177,7 @@ func (l *login) mainPage(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		if ok, err := strconv.ParseBool(r.URL.Query().Get("login")); ok && err == nil {
-			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			l.askForBasicAuth(w)
 			return
 		}
 
@@ -226,7 +230,14 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	username, err := AuthFromContext(r.Context())
 	if err == nil {
 		token := tokenFromContext(r.Context())
-		if token != "" && r.Method == "POST" && r.FormValue("logout") != "" {
+		if r.Method == "POST" && r.FormValue("logout") != "" {
+			// remove basic auth by asking for it again
+			if token == "" {
+				logger.Info().Str("username", username).Msg("logged out")
+				l.askForBasicAuth(w)
+				return
+			}
+
 			// remove cookie
 			l.setCookie(w, "")
 
@@ -253,8 +264,10 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// remove basic auth by asking for it again
 	if errors.Is(err, ErrApiUserNotFound) || errors.Is(err, ErrApiWrongPassword) {
-		w.WriteHeader(http.StatusForbidden)
+		logger.Err(err).Msg("basic auth error")
+		l.askForBasicAuth(w)
 		return
 	}
 
