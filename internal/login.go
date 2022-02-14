@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -170,6 +171,12 @@ func (l *login) mainPage(w http.ResponseWriter, r *http.Request) {
 	logger := l.newLogger(r)
 
 	if r.Method == "GET" {
+		if ok, err := strconv.ParseBool(r.URL.Query().Get("login")); ok && err == nil {
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+
 		logger.Debug().Msg("requested login page")
 		l.page.Login(w, r)
 		return

@@ -109,6 +109,9 @@ button[name=logout] {
       <input type="email" placeholder="Enter valid email address" name="email" required>
 
       <button type="submit">Send login link</button>
+      {{ if .LoginUrl }}
+        Or <a href="{{ .LoginUrl }}">login using password</a>.
+      {{ end -}}
     {{ end -}}
   {{ end -}}
 </form>

@@ -69,6 +69,23 @@ func (c *App) CreateUrl(token, redirectTo string) (string, error) {
 	return link.String(), nil
 }
 
+func (c *App) LoginUrl() string {
+	if len(c.Auths) == 0 {
+		return ""
+	}
+
+	link, err := url.Parse(c.Url)
+	if err != nil {
+		return ""
+	}
+
+	q := link.Query()
+	q.Add("login", "1")
+	link.RawQuery = q.Encode()
+
+	return link.String()
+}
+
 func (App) Init(cmd *cobra.Command) error {
 	cmd.PersistentFlags().String("app.name", "E-mail auth", "Application Name.")
 	if err := viper.BindPFlag("app.name", cmd.PersistentFlags().Lookup("app.name")); err != nil {

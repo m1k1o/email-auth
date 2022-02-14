@@ -13,6 +13,7 @@ import (
 type Template struct {
 	AppName  string
 	AppUrl   string
+	LoginUrl string
 	Success  string
 	Error    string
 	LoggedIn bool
@@ -72,8 +73,9 @@ func (manager *Manager) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusUnauthorized)
 
 	manager.serve(w, Template{
-		AppName: manager.app.Name,
-		AppUrl:  manager.app.GetUrl(r),
+		AppName:  manager.app.Name,
+		AppUrl:   manager.app.GetUrl(r),
+		LoginUrl: manager.app.LoginUrl(),
 	})
 }
 
