@@ -7,12 +7,13 @@ app:
   bind: "127.0.0.1:8080"
   # Trust proxy X-Forwarded-For and X-Real-Ip headers.
   proxy: false
-  # Authentication users using HTTP Basic Auth (usually for API).
-  auths:
-    username: password
   # Allowed email addresses or domains (only @domain.org) to log in.
   emails:
   - "@test.com"
+  # Users authentication using HTTP Basic Auth, with bcrypt hashes.
+  # Generate entires using `htpasswd -Bbn username password`.
+  users:
+  - "username:$2y$05$jB7JXurhAS37c45mUwmvIO0vdLlzRVVlwJiQUY8eP2GL74TA5C0c2"
 
   header:
     # If authentication header should be enabled.

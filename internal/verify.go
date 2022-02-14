@@ -5,6 +5,8 @@ import (
 	"errors"
 	"net/http"
 
+	"golang.org/x/crypto/bcrypt"
+
 	"github.com/m1k1o/email-auth/internal/auth"
 	"github.com/m1k1o/email-auth/internal/config"
 )
@@ -64,12 +66,12 @@ func (v *verify) basicAuth(r *http.Request) (string, error) {
 		return "", ErrNoAuthentication
 	}
 
-	pass, found := v.app.Auths[username]
+	secret, found := v.app.Users[username]
 	if !found {
 		return "", ErrApiUserNotFound
 	}
 
-	if pass != password {
+	if err := bcrypt.CompareHashAndPassword([]byte(secret), []byte(password)); err != nil {
 		return "", ErrApiWrongPassword
 	}
 

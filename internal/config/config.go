@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -29,7 +31,7 @@ type App struct {
 	Url    string
 	Bind   string
 	Proxy  bool
-	Auths  map[string]string
+	Users  map[string]string
 	Emails []string
 
 	Header     Header
@@ -70,7 +72,7 @@ func (c *App) CreateUrl(token, redirectTo string) (string, error) {
 }
 
 func (c *App) LoginUrl() string {
-	if len(c.Auths) == 0 {
+	if len(c.Users) == 0 {
 		return ""
 	}
 
@@ -112,6 +114,11 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().StringSlice("app.users", []string{}, "Users authentication using HTTP Basic Auth, with bcrypt hashes.")
+	if err := viper.BindPFlag("app.users", cmd.PersistentFlags().Lookup("app.users")); err != nil {
+		return err
+	}
+
 	//
 	// header
 	//
@@ -148,8 +155,18 @@ func (c *App) Set() {
 	c.Url = viper.GetString("app.url")
 	c.Bind = viper.GetString("app.bind")
 	c.Proxy = viper.GetBool("app.proxy")
-	c.Auths = viper.GetStringMapString("app.auths")
 	c.Emails = viper.GetStringSlice("app.emails")
+
+	c.Users = map[string]string{}
+	for _, user := range viper.GetStringSlice("app.users") {
+		split := strings.Split(user, ":")
+		if len(split) != 2 {
+			log.Panic().Msgf("error parsing BasicUser: %v", user)
+		}
+
+		username, secret := split[0], split[1]
+		c.Users[username] = secret
+	}
 
 	c.Header.Enabled = viper.GetBool("app.header.enabled")
 	c.Header.Name = viper.GetString("app.header.name")
