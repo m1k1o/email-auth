@@ -119,9 +119,9 @@ func (l *login) setCookie(w http.ResponseWriter, token string) {
 	})
 }
 
-func (l *login) askForBasicAuth(w http.ResponseWriter) {
+func (l *login) askForBasicAuth(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8"`)
-	l.page.Error(w, "Unauthorized.", http.StatusUnauthorized)
+	l.page.Error(w, r, "Unauthorized.", http.StatusUnauthorized)
 }
 
 func (l *login) linkAction(next http.HandlerFunc) http.HandlerFunc {
@@ -137,26 +137,26 @@ func (l *login) linkAction(next http.HandlerFunc) http.HandlerFunc {
 		session, err := l.auth.Get(token)
 		if errors.Is(err, auth.ErrTokenNotFound) || err == nil && session.LoggedIn() {
 			logger.Warn().Msg("invalid login link")
-			l.page.Error(w, "Invalid login link.", http.StatusBadRequest)
+			l.page.Error(w, r, "Invalid login link.", http.StatusBadRequest)
 			return
 		}
 
 		if err != nil {
 			logger.Err(err).Msg("unable to get session")
-			l.page.Error(w, "Error while getting session, please contact your system administrator.", http.StatusInternalServerError)
+			l.page.Error(w, r, "Error while getting session, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
 		if session.Expired() {
 			logger.Warn().Str("email", session.Email()).Msg("login link expired")
-			l.page.Error(w, "Login link aleady expired, please request new.", http.StatusBadRequest)
+			l.page.Error(w, r, "Login link aleady expired, please request new.", http.StatusBadRequest)
 			return
 		}
 
 		newToken, err := l.auth.Login(token)
 		if err != nil {
 			logger.Err(err).Str("email", session.Email()).Msg("unable to login")
-			l.page.Error(w, "Error while logging in, please contact your system administrator.", http.StatusInternalServerError)
+			l.page.Error(w, r, "Error while logging in, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
@@ -177,7 +177,7 @@ func (l *login) mainPage(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "GET" {
 		if ok, err := strconv.ParseBool(r.URL.Query().Get("login")); ok && err == nil {
-			l.askForBasicAuth(w)
+			l.askForBasicAuth(w, r)
 			return
 		}
 
@@ -190,20 +190,20 @@ func (l *login) mainPage(w http.ResponseWriter, r *http.Request) {
 		email := r.FormValue("email")
 		if email == "" {
 			logger.Debug().Str("email", email).Msg("no email provided")
-			l.page.Error(w, "No email provided.", http.StatusBadRequest)
+			l.page.Error(w, r, "No email provided.", http.StatusBadRequest)
 			return
 		}
 
 		if !l.verifyEmail(email) {
 			logger.Warn().Str("email", email).Msg("email not allowed")
-			l.page.Error(w, "Given email is not permitted for login, please contact your system administrator.", http.StatusForbidden)
+			l.page.Error(w, r, "Given email is not permitted for login, please contact your system administrator.", http.StatusForbidden)
 			return
 		}
 
 		token, err := l.auth.Add(email)
 		if err != nil {
 			logger.Err(err).Str("email", email).Msg("unable to create session")
-			l.page.Error(w, "Error while creating session, please contact your system administrator.", http.StatusInternalServerError)
+			l.page.Error(w, r, "Error while creating session, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
@@ -211,12 +211,12 @@ func (l *login) mainPage(w http.ResponseWriter, r *http.Request) {
 		err = l.mail.Send(email, token, redirectTo)
 		if err != nil {
 			logger.Err(err).Str("email", email).Msg("unable to send email")
-			l.page.Error(w, "Error while sending email, please contact your system administrator.", http.StatusInternalServerError)
+			l.page.Error(w, r, "Error while sending email, please contact your system administrator.", http.StatusInternalServerError)
 			return
 		}
 
 		logger.Info().Str("email", email).Msg("email sent")
-		l.page.Success(w, "Please check your email inbox for further instructions.")
+		l.page.Success(w, r, "Please check your email inbox for further instructions.")
 		return
 	}
 
@@ -234,7 +234,7 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			// remove basic auth by asking for it again
 			if token == "" {
 				logger.Info().Str("username", username).Msg("logged out")
-				l.askForBasicAuth(w)
+				l.askForBasicAuth(w, r)
 				return
 			}
 
@@ -244,16 +244,16 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			err := l.auth.Delete(token)
 			if err != nil {
 				logger.Err(err).Msg("unable to delete session")
-				l.page.Error(w, "Error while deleting session, please contact your system administrator.", http.StatusInternalServerError)
+				l.page.Error(w, r, "Error while deleting session, please contact your system administrator.", http.StatusInternalServerError)
 				return
 			}
 
 			logger.Info().Str("email", username).Msg("session deleted")
-			l.page.Success(w, "You have been successfully logged out.")
+			l.page.Success(w, r, "You have been successfully logged out.")
 			return
 		}
 
-		l.page.LoggedIn(w)
+		l.page.LoggedIn(w, r)
 		return
 	}
 
@@ -267,7 +267,7 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// remove basic auth by asking for it again
 	if errors.Is(err, ErrApiUserNotFound) || errors.Is(err, ErrApiWrongPassword) {
 		logger.Err(err).Msg("basic auth error")
-		l.askForBasicAuth(w)
+		l.askForBasicAuth(w, r)
 		return
 	}
 
@@ -276,7 +276,7 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		l.setCookie(w, "")
 
 		logger.Warn().Msg("session not found")
-		l.page.Error(w, "Session not found or expired, please log in again.", http.StatusUnauthorized)
+		l.page.Error(w, r, "Session not found or expired, please log in again.", http.StatusUnauthorized)
 		return
 	}
 
@@ -285,10 +285,10 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		l.setCookie(w, "")
 
 		logger.Warn().Str("email", username).Msg("session expired")
-		l.page.Error(w, "Session expried, please log in again.", http.StatusForbidden)
+		l.page.Error(w, r, "Session expried, please log in again.", http.StatusForbidden)
 		return
 	}
 
 	logger.Err(err).Msg("unable to get session")
-	l.page.Error(w, "Error while getting session, please contact your system administrator.", http.StatusInternalServerError)
+	l.page.Error(w, r, "Error while getting session, please contact your system administrator.", http.StatusInternalServerError)
 }

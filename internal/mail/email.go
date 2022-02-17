@@ -67,7 +67,7 @@ func (manager *Manager) Send(email, token, redirectTo string) error {
 	m.SetHeader("Subject", fmt.Sprintf("Login to %s", manager.app.Name))
 
 	// Get login link
-	loginLink, err := manager.app.CreateUrl(token, redirectTo)
+	loginLink, err := manager.app.GetTokenUrl(token, redirectTo)
 	if err != nil {
 		return err
 	}

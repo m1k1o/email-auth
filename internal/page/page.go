@@ -49,22 +49,24 @@ func (manager *Manager) serve(w http.ResponseWriter, template Template) {
 	}
 }
 
-func (manager *Manager) Error(w http.ResponseWriter, msg string, code int) {
+func (manager *Manager) Error(w http.ResponseWriter, r *http.Request, msg string, code int) {
 	w.WriteHeader(code)
 
+	redirectTo := r.URL.Query().Get("to")
 	manager.serve(w, Template{
 		AppName: manager.app.Name,
-		AppUrl:  manager.app.Url,
+		AppUrl:  manager.app.GetUrl(redirectTo),
 		Error:   msg,
 	})
 }
 
-func (manager *Manager) Success(w http.ResponseWriter, msg string) {
+func (manager *Manager) Success(w http.ResponseWriter, r *http.Request, msg string) {
 	w.WriteHeader(http.StatusOK)
 
+	redirectTo := r.URL.Query().Get("to")
 	manager.serve(w, Template{
 		AppName: manager.app.Name,
-		AppUrl:  manager.app.Url,
+		AppUrl:  manager.app.GetUrl(redirectTo),
 		Success: msg,
 	})
 }
@@ -72,19 +74,35 @@ func (manager *Manager) Success(w http.ResponseWriter, msg string) {
 func (manager *Manager) Login(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusUnauthorized)
 
+	redirectTo := r.URL.Query().Get("to")
+	if redirectTo == "" {
+		redirectTo = r.Referer()
+	}
+
+	loginUrl := ""
+	if len(manager.app.Users) > 0 {
+		var err error
+		loginUrl, err = manager.app.GetLoginUrl(redirectTo)
+		if err != nil {
+			log.Err(err).Msg("error while generating login URL")
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+	}
+
 	manager.serve(w, Template{
 		AppName:  manager.app.Name,
-		AppUrl:   manager.app.GetUrl(r),
-		LoginUrl: manager.app.LoginUrl(),
+		AppUrl:   manager.app.GetUrl(redirectTo),
+		LoginUrl: loginUrl,
 	})
 }
 
-func (manager *Manager) LoggedIn(w http.ResponseWriter) {
+func (manager *Manager) LoggedIn(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
+	redirectTo := r.URL.Query().Get("to")
 	manager.serve(w, Template{
 		AppName:  manager.app.Name,
-		AppUrl:   manager.app.Url,
+		AppUrl:   manager.app.GetUrl(redirectTo),
 		LoggedIn: true,
 	})
 }

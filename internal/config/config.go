@@ -3,7 +3,6 @@ package config
 import (
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"strings"
 	"time"
@@ -39,31 +38,29 @@ type App struct {
 	Expiration Expiration
 }
 
-func (c *App) GetUrl(r *http.Request) string {
-	redirectTo := r.URL.Query().Get("to")
-
-	if redirectTo == "" {
-		redirectTo = r.Referer()
-	}
-
-	url, err := c.CreateUrl("", redirectTo)
+func (c *App) GetUrl(redirectTo string) string {
+	link, err := url.Parse(c.Url)
 	if err != nil {
 		return c.Url
 	}
 
-	return url
+	q := link.Query()
+	if redirectTo != "" {
+		q.Add("to", redirectTo)
+	}
+	link.RawQuery = q.Encode()
+
+	return link.String()
 }
 
-func (c *App) CreateUrl(token, redirectTo string) (string, error) {
+func (c *App) GetTokenUrl(token, redirectTo string) (string, error) {
 	link, err := url.Parse(c.Url)
 	if err != nil {
 		return "", err
 	}
 
 	q := link.Query()
-	if token != "" {
-		q.Add("token", token)
-	}
+	q.Add("token", token)
 	if redirectTo != "" {
 		q.Add("to", redirectTo)
 	}
@@ -72,21 +69,20 @@ func (c *App) CreateUrl(token, redirectTo string) (string, error) {
 	return link.String(), nil
 }
 
-func (c *App) LoginUrl() string {
-	if len(c.Users) == 0 {
-		return ""
-	}
-
+func (c *App) GetLoginUrl(redirectTo string) (string, error) {
 	link, err := url.Parse(c.Url)
 	if err != nil {
-		return ""
+		return "", err
 	}
 
 	q := link.Query()
 	q.Add("login", "1")
+	if redirectTo != "" {
+		q.Add("to", redirectTo)
+	}
 	link.RawQuery = q.Encode()
 
-	return link.String()
+	return link.String(), nil
 }
 
 func (App) Init(cmd *cobra.Command) error {

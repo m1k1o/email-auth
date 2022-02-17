@@ -140,11 +140,7 @@ func (v *verify) WithRedirect(next http.HandlerFunc) http.HandlerFunc {
 
 		targetUrl := r.Header.Get("X-Original-URL")
 		if targetUrl != "" {
-			redirectTo, err := v.app.CreateUrl("", targetUrl)
-			if err != nil {
-				redirectTo = v.app.Url
-			}
-
+			redirectTo := v.app.GetUrl(targetUrl)
 			http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
 			return
 		}
@@ -163,11 +159,7 @@ func (v *verify) WithRedirect(next http.HandlerFunc) http.HandlerFunc {
 		}
 		targetUrl += r.Header.Get("X-Forwarded-Uri")
 
-		redirectTo, err := v.app.CreateUrl("", targetUrl)
-		if err != nil {
-			redirectTo = v.app.Url
-		}
-
+		redirectTo := v.app.GetUrl(targetUrl)
 		http.Redirect(w, r, redirectTo, http.StatusTemporaryRedirect)
 	}
 }
