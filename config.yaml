@@ -26,7 +26,7 @@ app:
     # If authentication header should be enabled.
     enabled: true
     # Authentication header name.
-    name: "X-Auth-Email"
+    name: "X-Auth-User"
 
   expiration:
     # Login link expiration in seconds. (default 5 min)
