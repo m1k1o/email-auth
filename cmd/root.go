@@ -27,7 +27,7 @@ var rootCmd = &cobra.Command{
 	Use:     "email-auth",
 	Short:   "Authentication using email.",
 	Long:    `Authentication using email.`,
-	Version: "2.0.1",
+	Version: "2.0.2",
 }
 
 var onInitialize []func()
