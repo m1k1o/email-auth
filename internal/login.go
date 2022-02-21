@@ -253,6 +253,18 @@ func (l *login) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// if has ?login=1 and no token, redirect
+		if ok, err := strconv.ParseBool(r.URL.Query().Get("login")); ok && err == nil && token == "" {
+			to := r.URL.Query().Get("to")
+			if !l.verifyRedirectLink(to) {
+				to = l.app.Url
+			}
+
+			logger.Info().Str("username", username).Str("to", to).Msg("basic auth logged in")
+			http.Redirect(w, r, to, http.StatusTemporaryRedirect)
+			return
+		}
+
 		l.page.LoggedIn(w, r)
 		return
 	}
