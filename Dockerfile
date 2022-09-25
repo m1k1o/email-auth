@@ -5,7 +5,8 @@ FROM golang:1.18-bullseye as builder
 WORKDIR /app
 
 COPY . .
-RUN go get -v -t -d .; ./build
+RUN go get -v -t -d .
+RUN ./build
 
 #
 # STAGE 2: build a small image
