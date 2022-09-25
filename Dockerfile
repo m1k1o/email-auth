@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY . .
 RUN go get -v -t -d .
-RUN ./build
+RUN /app/build
 
 #
 # STAGE 2: build a small image
