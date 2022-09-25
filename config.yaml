@@ -24,6 +24,19 @@ app:
   # Generate file using `htpasswd -Bbn username password >> usersfile`.
   users_file: ""
 
+  # Allowed redirect URLs.
+  redirect_allowlist:
+  # Allow all HTTPs URLS.
+  - "https://"
+  # Allow specific host (any scheme).
+  - "//127.0.0.1:8080"
+  # Allow selected path prefix (any scheme and host).
+  - "/foo-bar"
+  # Allow scheme + path prefix with any host.
+  - "http:///bar-foo"
+  # Allow host + path prefix.
+  - "//test.com/foo"
+
   header:
     # If authentication header should be enabled.
     enabled: true

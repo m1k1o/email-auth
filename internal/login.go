@@ -63,6 +63,34 @@ func (l *login) verifyRedirectLink(redirectTo string) bool {
 		return false
 	}
 
+	if len(l.app.RedirectAllowlist) > 0 {
+		for _, allowed := range l.app.RedirectAllowlist {
+			// match scheme
+			if allowed.Scheme != "" {
+				if allowed.Scheme != redirectLink.Scheme {
+					continue
+				}
+			}
+
+			// match host
+			if allowed.Host != "" {
+				if allowed.Host != redirectLink.Host {
+					continue
+				}
+			}
+
+			// match path
+			if allowed.Path != "" {
+				if !strings.HasPrefix(redirectLink.Path, allowed.Path) {
+					continue
+				}
+			}
+
+			return true
+		}
+		return false
+	}
+
 	hostname := redirectLink.Hostname()
 	return l.cookie.Domain == "" || strings.HasSuffix(hostname, l.cookie.Domain)
 }

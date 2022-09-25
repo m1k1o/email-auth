@@ -35,6 +35,8 @@ type App struct {
 	Users  map[string]string
 	Emails []string
 
+	RedirectAllowlist []url.URL
+
 	Header     Header
 	Expiration Expiration
 }
@@ -132,6 +134,11 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().StringSlice("app.redirect_allowlist", []string{}, "Allowed redirect URLs.")
+	if err := viper.BindPFlag("app.redirect_allowlist", cmd.PersistentFlags().Lookup("app.redirect_allowlist")); err != nil {
+		return err
+	}
+
 	//
 	// header
 	//
@@ -226,6 +233,22 @@ func (c *App) Set() {
 
 		username, secret := split[0], split[1]
 		c.Users[username] = secret
+	}
+
+	urls := viper.GetStringSlice("app.redirect_allowlist")
+	c.RedirectAllowlist = []url.URL{}
+	for _, u := range urls {
+		u := strings.TrimSpace(u)
+		if u == "" {
+			continue
+		}
+
+		parsed, err := url.Parse(u)
+		if err != nil {
+			log.Panic().Err(err).Msgf("error parsing redirect URL: %v", u)
+		}
+
+		c.RedirectAllowlist = append(c.RedirectAllowlist, *parsed)
 	}
 
 	c.Header.Enabled = viper.GetBool("app.header.enabled")
