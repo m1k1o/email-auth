@@ -11,12 +11,13 @@ import (
 )
 
 type Template struct {
-	AppName  string
-	AppUrl   string
-	LoginUrl string
-	Success  string
-	Error    string
-	LoggedIn bool
+	AppName   string
+	AppUrl    string
+	LoginUrl  string
+	TargetUrl string
+	Success   string
+	Error     string
+	LoggedIn  bool
 }
 
 type Manager struct {
@@ -101,8 +102,9 @@ func (manager *Manager) LoggedIn(w http.ResponseWriter, r *http.Request) {
 
 	redirectTo := r.URL.Query().Get("to")
 	manager.serve(w, Template{
-		AppName:  manager.app.Name,
-		AppUrl:   manager.app.GetUrl(redirectTo),
-		LoggedIn: true,
+		AppName:   manager.app.Name,
+		AppUrl:    manager.app.GetUrl(redirectTo),
+		LoggedIn:  true,
+		TargetUrl: manager.app.Target,
 	})
 }

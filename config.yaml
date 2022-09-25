@@ -3,6 +3,8 @@ app:
   name: "E-mail auth"
   # Application URL.
   url: "http://127.0.0.1:8080/"
+  # Target URL that will be shown after logging in.
+  target: "http://127.0.0.1:8080/protected"
   # Address, where is HTTP server listening.
   bind: "127.0.0.1:8080"
   # Trust proxy X-Forwarded-For and X-Real-Ip headers.

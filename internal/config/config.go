@@ -29,6 +29,7 @@ type Expiration struct {
 type App struct {
 	Name   string
 	Url    string
+	Target string
 	Bind   string
 	Proxy  bool
 	Users  map[string]string
@@ -96,6 +97,11 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().String("app.target", "", "Target URL that will be shown after logging in.")
+	if err := viper.BindPFlag("app.target", cmd.PersistentFlags().Lookup("app.target")); err != nil {
+		return err
+	}
+
 	cmd.PersistentFlags().String("app.bind", "127.0.0.1:8080", "Address, where is HTTP server listening.")
 	if err := viper.BindPFlag("app.bind", cmd.PersistentFlags().Lookup("app.bind")); err != nil {
 		return err
@@ -160,6 +166,7 @@ func (App) Init(cmd *cobra.Command) error {
 func (c *App) Set() {
 	c.Name = viper.GetString("app.name")
 	c.Url = viper.GetString("app.url")
+	c.Target = viper.GetString("app.target")
 	c.Bind = viper.GetString("app.bind")
 	c.Proxy = viper.GetBool("app.proxy")
 
