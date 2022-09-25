@@ -1,0 +1,52 @@
+#!/bin/bash
+
+BUILD_DATE=`date -u +'%Y-%m-%dT%H:%M:%SZ'`
+echo "BUILD_DATE: $BUILD_DATE"
+
+#
+# set git build variables if git exists
+if git status 2>&1 > /dev/null;
+then
+    if [ -z $GIT_COMMIT ];
+    then
+        GIT_COMMIT=`git rev-parse --short HEAD`
+    fi
+
+    if [ -z $GIT_BRANCH ];
+    then
+        GIT_BRANCH=`git rev-parse --symbolic-full-name --abbrev-ref HEAD`
+    fi
+
+    if [ -z $VERSION ];
+    then
+        VERSION=`git tag --points-at $GIT_COMMIT | head -n 1`
+    fi
+fi
+
+if [ -z $GIT_COMMIT ];
+then
+    GIT_COMMIT="dev"
+fi
+
+echo "GIT_COMMIT: $GIT_COMMIT"
+
+if [ -z $GIT_BRANCH ];
+then
+    GIT_BRANCH="dev"
+fi
+
+echo "GIT_BRANCH: $GIT_BRANCH"
+
+if [ ! -z $VERSION ];
+then
+    echo "VERSION: $VERSION"
+fi
+
+export CGO_ENABLED=0
+go build -ldflags "
+    -s -w
+    -X 'main.version=$VERSION'
+    -X 'main.buildDate=$BUILD_DATE'
+    -X 'main.gitCommit=$GIT_COMMIT'
+    -X 'main.gitBranch=$GIT_BRANCH'
+" -o bin main.go

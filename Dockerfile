@@ -1,12 +1,11 @@
 #
 # STAGE 1: build executable binary
 #
-FROM golang:1.17-buster as builder
+FROM golang:1.18-bullseye as builder
 WORKDIR /app
 
 COPY . .
-RUN go get -v -t -d .; \
-    CGO_ENABLED=0 go build -o email-auth main.go
+RUN go get -v -t -d .; ./build
 
 #
 # STAGE 2: build a small image
@@ -14,7 +13,7 @@ RUN go get -v -t -d .; \
 FROM scratch
 WORKDIR /app
 
-COPY --from=builder /app/email-auth /usr/bin/email-auth
+COPY --from=builder /app/bin /usr/bin/email-auth
 COPY tmpl tmpl
 
 ENTRYPOINT [ "email-auth" ]
