@@ -235,6 +235,11 @@ func (c *App) Set() {
 		c.Users[username] = secret
 	}
 
+	log.Info().
+		Int("emails", len(c.Emails)).
+		Int("users", len(c.Users)).
+		Msgf("loaded emails and users")
+
 	urls := viper.GetStringSlice("app.redirect_allowlist")
 	c.RedirectAllowlist = []url.URL{}
 	for _, u := range urls {
