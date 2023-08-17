@@ -157,7 +157,7 @@ func (l *login) linkAction(next http.HandlerFunc) http.HandlerFunc {
 		logger := l.newLogger(r)
 
 		token := r.URL.Query().Get("token")
-		if token == "" || r.Method != "GET" {
+		if token == "" {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -181,22 +181,35 @@ func (l *login) linkAction(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
-		newToken, err := l.auth.Login(token)
-		if err != nil {
-			logger.Err(err).Str("email", session.Email()).Msg("unable to login")
-			l.page.Error(w, r, "Error while logging in, please contact your system administrator.", http.StatusInternalServerError)
+		// log me in page
+		if l.app.LoginBtn && r.Method == "GET" {
+			l.page.LoginBtn(w, r)
 			return
 		}
 
-		l.setCookie(w, newToken)
+		// login action
+		if (l.app.LoginBtn && r.Method == "POST") || (!l.app.LoginBtn && r.Method == "GET") {
+			newToken, err := l.auth.Login(token)
+			if err != nil {
+				logger.Err(err).Str("email", session.Email()).Msg("unable to login")
+				l.page.Error(w, r, "Error while logging in, please contact your system administrator.", http.StatusInternalServerError)
+				return
+			}
 
-		to := r.URL.Query().Get("to")
-		if !l.verifyRedirectLink(to) {
-			to = l.app.Url
+			l.setCookie(w, newToken)
+
+			to := r.URL.Query().Get("to")
+			if !l.verifyRedirectLink(to) {
+				to = l.app.Url
+			}
+
+			logger.Info().Str("email", session.Email()).Str("to", to).Msg("login verified")
+			http.Redirect(w, r, to, http.StatusTemporaryRedirect)
+			return
 		}
 
-		logger.Info().Str("email", session.Email()).Str("to", to).Msg("login verified")
-		http.Redirect(w, r, to, http.StatusTemporaryRedirect)
+		// invalid method
+		next.ServeHTTP(w, r)
 	}
 }
 

@@ -2,8 +2,8 @@ package page
 
 import (
 	"html/template"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/m1k1o/email-auth/internal/config"
 
@@ -18,6 +18,7 @@ type Template struct {
 	Success   string
 	Error     string
 	LoggedIn  bool
+	LoginBtn  bool
 }
 
 type Manager struct {
@@ -26,7 +27,7 @@ type Manager struct {
 }
 
 func New(templatePath string, app config.App) (*Manager, error) {
-	html, err := ioutil.ReadFile(templatePath)
+	html, err := os.ReadFile(templatePath)
 	if err != nil {
 		return nil, err
 	}
@@ -106,5 +107,25 @@ func (manager *Manager) LoggedIn(w http.ResponseWriter, r *http.Request) {
 		AppUrl:    manager.app.GetUrl(redirectTo),
 		LoggedIn:  true,
 		TargetUrl: manager.app.Target,
+	})
+}
+
+func (manager *Manager) LoginBtn(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+
+	redirectTo := r.URL.Query().Get("to")
+	token := r.URL.Query().Get("token")
+
+	tokenUrl, err := manager.app.GetTokenUrl(token, redirectTo)
+	if err != nil {
+		log.Err(err).Msg("error while generating login URL")
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	manager.serve(w, Template{
+		AppName:  manager.app.Name,
+		AppUrl:   tokenUrl,
+		LoginBtn: true,
 	})
 }

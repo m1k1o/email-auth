@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"golang.org/x/crypto/bcrypt"
 
@@ -174,6 +175,10 @@ func (v *verify) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		if v.app.Header.Enabled {
 			w.Header().Set(v.app.Header.Name, user)
+
+			if role, ok := v.app.Roles[strings.ToLower(user)]; ok {
+				w.Header().Set(v.app.Header.Role, role)
+			}
 		}
 
 		w.Write([]byte("OK"))

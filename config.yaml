@@ -18,11 +18,19 @@ app:
 
   # Users authentication using HTTP Basic Auth, with bcrypt hashes.
   # Generate entires using `htpasswd -Bbn username password`.
+  # Use $$ to escape $ in password.
   users:
   - "username:$2y$05$jB7JXurhAS37c45mUwmvIO0vdLlzRVVlwJiQUY8eP2GL74TA5C0c2"
   # Path to a file, where additional users are stored, deparated by newline.
   # Generate file using `htpasswd -Bbn username password >> usersfile`.
   users_file: ""
+
+  # Users or email addresses that are administrators.
+  roles:
+  - "admin@test.com=admin" # user = role
+  - "admin=admin"
+  # Path to a file, where additional roles are stored, deparated by newline.
+  roles_file: ""
 
   # Allowed redirect URLs.
   redirect_allowlist:
@@ -37,11 +45,16 @@ app:
   # Allow host + path prefix.
   - "//test.com/foo"
 
+  # If login button should be shown, otherwise user is logged in automatically on visit.
+  login_btn: true
+
   header:
     # If authentication header should be enabled.
     enabled: true
     # Authentication header name.
     name: "X-Auth-User"
+    # Authentication header role.
+    role: "X-Auth-Role"
 
   expiration:
     # Login link expiration in seconds. (default 5 min)

@@ -2,8 +2,8 @@ package config
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -19,6 +19,7 @@ import (
 type Header struct {
 	Enabled bool
 	Name    string
+	Role    string
 }
 
 type Expiration struct {
@@ -32,10 +33,13 @@ type App struct {
 	Target string
 	Bind   string
 	Proxy  bool
-	Users  map[string]string
-	Emails []string
+	Users  map[string]string // username:password
+	Emails []string          // list of emails or @domains
+	Roles  map[string]string // username/email:role
 
 	RedirectAllowlist []url.URL
+
+	LoginBtn bool // do not login automatically but show login button instead
 
 	Header     Header
 	Expiration Expiration
@@ -124,7 +128,7 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
-	cmd.PersistentFlags().StringSlice("app.users", []string{}, "Users authentication using HTTP Basic Auth, with bcrypt hashes.")
+	cmd.PersistentFlags().StringSlice("app.users", []string{}, "Users authentication using HTTP Basic Auth, with bcrypt hashes, in format user:hash.")
 	if err := viper.BindPFlag("app.users", cmd.PersistentFlags().Lookup("app.users")); err != nil {
 		return err
 	}
@@ -134,8 +138,23 @@ func (App) Init(cmd *cobra.Command) error {
 		return err
 	}
 
+	cmd.PersistentFlags().StringSlice("app.roles", []string{}, "Roles for users and emails, in format key=value.")
+	if err := viper.BindPFlag("app.roles", cmd.PersistentFlags().Lookup("app.roles")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("app.roles_file", "", "Path to a file, where additional roles are stored, deparated by newline.")
+	if err := viper.BindPFlag("app.roles_file", cmd.PersistentFlags().Lookup("app.roles_file")); err != nil {
+		return err
+	}
+
 	cmd.PersistentFlags().StringSlice("app.redirect_allowlist", []string{}, "Allowed redirect URLs.")
 	if err := viper.BindPFlag("app.redirect_allowlist", cmd.PersistentFlags().Lookup("app.redirect_allowlist")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().Bool("app.login_btn", false, "Show login button instead of automatic login.")
+	if err := viper.BindPFlag("app.login_btn", cmd.PersistentFlags().Lookup("app.login_btn")); err != nil {
 		return err
 	}
 
@@ -150,6 +169,11 @@ func (App) Init(cmd *cobra.Command) error {
 
 	cmd.PersistentFlags().String("app.header.name", "X-Auth-Email", "Authentication header name.")
 	if err := viper.BindPFlag("app.header.name", cmd.PersistentFlags().Lookup("app.header.name")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("app.header.role", "X-Auth-Role", "Authentication header role.")
+	if err := viper.BindPFlag("app.header.role", cmd.PersistentFlags().Lookup("app.header.role")); err != nil {
 		return err
 	}
 
@@ -183,7 +207,7 @@ func (c *App) Set() {
 	// load emails from a file
 	emailsFile := viper.GetString("app.emails_file")
 	if emailsFile != "" {
-		emailsBytes, err := ioutil.ReadFile(emailsFile)
+		emailsBytes, err := os.ReadFile(emailsFile)
 		if err != nil {
 			log.Panic().Err(err).Msgf("error opening emails file")
 		}
@@ -198,13 +222,28 @@ func (c *App) Set() {
 	// load users from a file
 	usersFile := viper.GetString("app.users_file")
 	if usersFile != "" {
-		usersBytes, err := ioutil.ReadFile(usersFile)
+		usersBytes, err := os.ReadFile(usersFile)
 		if err != nil {
 			log.Panic().Err(err).Msgf("error opening users file")
 		}
 
 		users = append(users,
 			strings.Split(string(usersBytes), "\n")...)
+	}
+
+	// get roles from config
+	roles := viper.GetStringSlice("app.roles")
+
+	// load roles from a file
+	rolesFile := viper.GetString("app.roles_file")
+	if rolesFile != "" {
+		rolesBytes, err := os.ReadFile(rolesFile)
+		if err != nil {
+			log.Panic().Err(err).Msgf("error opening roles file")
+		}
+
+		roles = append(roles,
+			strings.Split(string(rolesBytes), "\n")...)
 	}
 
 	// clean up emails
@@ -235,10 +274,29 @@ func (c *App) Set() {
 		c.Users[username] = secret
 	}
 
+	// convert roles to a map
+	c.Roles = map[string]string{}
+	for _, row := range roles {
+		row := strings.TrimSpace(row)
+		if row == "" {
+			continue
+		}
+
+		split := strings.Split(row, "=")
+		if len(split) != 2 {
+			log.Panic().Msgf("error parsing role: %v", row)
+		}
+
+		user, role := strings.TrimSpace(split[0]), strings.TrimSpace(split[1])
+		user = strings.ToLower(user)
+		c.Roles[user] = role
+	}
+
 	log.Info().
 		Int("emails", len(c.Emails)).
 		Int("users", len(c.Users)).
-		Msgf("loaded emails and users")
+		Int("roles", len(c.Roles)).
+		Msgf("loaded emails, users and roles")
 
 	urls := viper.GetStringSlice("app.redirect_allowlist")
 	c.RedirectAllowlist = []url.URL{}
@@ -256,8 +314,11 @@ func (c *App) Set() {
 		c.RedirectAllowlist = append(c.RedirectAllowlist, *parsed)
 	}
 
+	c.LoginBtn = viper.GetBool("app.login_btn")
+
 	c.Header.Enabled = viper.GetBool("app.header.enabled")
 	c.Header.Name = viper.GetString("app.header.name")
+	c.Header.Role = viper.GetString("app.header.role")
 
 	c.Expiration.LoginLink = time.Duration(viper.GetInt64("app.expiration.link")) * time.Second
 	c.Expiration.Session = time.Duration(viper.GetInt64("app.expiration.session")) * time.Second

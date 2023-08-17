@@ -5,7 +5,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"html/template"
-	"io/ioutil"
+	"os"
 
 	"gopkg.in/mail.v2"
 
@@ -19,7 +19,7 @@ type Manager struct {
 }
 
 func New(templatePath string, app config.App, email config.Email) (*Manager, error) {
-	html, err := ioutil.ReadFile(templatePath)
+	html, err := os.ReadFile(templatePath)
 	if err != nil {
 		return nil, err
 	}

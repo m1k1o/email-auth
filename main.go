@@ -1,6 +1,10 @@
 package main
 
-import "github.com/m1k1o/email-auth/cmd"
+import (
+	_ "time/tzdata"
+
+	"github.com/m1k1o/email-auth/cmd"
+)
 
 var (
 	version = ""

@@ -111,6 +111,8 @@ input {
       </div>
       {{ with .TargetUrl }}<a href="{{ . }}" class="btn">Continue</a>{{ end }}
       <button class="btn logout" type="submit" name="logout" value="true">Logout</button>
+    {{ else if .LoginBtn }}
+      <button class="btn" type="submit">Click here to login</button>
     {{ else }}
       <label for="email"><b>E-Mail</b></label>
       <input type="email" placeholder="Enter valid email address" name="email" required>

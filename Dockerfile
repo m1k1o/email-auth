@@ -4,9 +4,12 @@
 FROM golang:1.18-bullseye as builder
 WORKDIR /app
 
+ARG VERSION
+ARG GIT_COMMIT
+ARG GIT_BRANCH
+
 COPY . .
-RUN go get -v -t -d .
-RUN /app/build
+RUN ./build
 
 #
 # STAGE 2: build a small image
@@ -14,10 +17,11 @@ RUN /app/build
 FROM scratch
 WORKDIR /app
 
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=builder /app/bin /usr/bin/email-auth
 COPY tmpl tmpl
 
-ENTRYPOINT [ "email-auth" ]
+ENTRYPOINT [ "/usr/bin/email-auth" ]
 
 EXPOSE 8080
 

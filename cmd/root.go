@@ -1,4 +1,4 @@
-// go-base version 2.2.2
+// go-base version 2.3.0
 package cmd
 
 import (
@@ -188,6 +188,11 @@ func initConfiguration(cfgFile string, defCfgPath string, envPrefix string) []st
 			}
 			configs = append(configs, file)
 		}
+	}
+
+	// expand environment variables
+	for _, k := range viper.AllKeys() {
+		viper.Set(k, expandStringValues(viper.Get(k)))
 	}
 
 	return configs
@@ -416,4 +421,38 @@ func initLogging(config logConfig) {
 		Int("maxsize", config.MaxSize).
 		Int("maxbackups", config.MaxBackups).
 		Msg("logging configured")
+}
+
+func expandStringValues(value interface{}) interface{} {
+	switch v := value.(type) {
+	case string:
+		return expandEnv(v)
+	case []interface{}:
+		nslice := make([]interface{}, 0, len(v))
+		for _, vint := range v {
+			nslice = append(nslice, expandStringValues(vint))
+		}
+		return nslice
+	case map[string]interface{}:
+		nmap := map[string]interface{}{}
+		for mk, mv := range v {
+			nmap[mk] = expandStringValues(mv)
+		}
+		return nmap
+	default:
+		return v
+	}
+}
+
+func expandEnv(s string) string {
+	return os.Expand(s, func(str string) string {
+		// This allows escaping environment variable substitution via $$, e.g.
+		// - $FOO will be substituted with env var FOO
+		// - $$FOO will be replaced with $FOO
+		// - $$$FOO will be replaced with $ + substituted env var FOO
+		if str == "$" {
+			return "$"
+		}
+		return os.Getenv(str)
+	})
 }
