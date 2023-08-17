@@ -7,6 +7,7 @@ import (
 
 	"github.com/m1k1o/email-auth/internal/auth"
 	"github.com/m1k1o/email-auth/internal/config"
+	"github.com/m1k1o/email-auth/internal/gui"
 	"github.com/m1k1o/email-auth/internal/mail"
 	"github.com/m1k1o/email-auth/internal/page"
 )
@@ -65,15 +66,32 @@ func (s *serve) WithRedirect(next http.HandlerFunc) http.HandlerFunc {
 	return s.verify.WithAuthentication(s.verify.WithRedirect(next))
 }
 
-func Serve(config config.Serve) error {
+func ServeApp(config config.Serve) error {
 	serve, err := New(config)
 	if err != nil {
 		return err
 	}
 
-	http.Handle("/", serve.Login())
-	http.Handle("/verify", serve.Verify())
+	mux := http.NewServeMux()
 
-	log.Info().Msgf("starting http server on %s", config.App.Bind)
-	return http.ListenAndServe(config.App.Bind, nil)
+	mux.Handle("/", serve.Login())
+	mux.Handle("/verify", serve.Verify())
+
+	log.Info().Msgf("starting http app server on %s", config.App.Bind)
+	return http.ListenAndServe(config.App.Bind, mux)
+}
+
+func ServeGui(config config.Serve) error {
+	guiManager, err := gui.New(config.App, config.Gui)
+	if err != nil {
+		return err
+	}
+
+	err = guiManager.Init()
+	if err != nil {
+		return err
+	}
+
+	log.Info().Msgf("starting http gui server on %s", config.Gui.Bind)
+	return http.ListenAndServe(config.Gui.Bind, guiManager)
 }

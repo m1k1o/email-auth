@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>email-auth</title>
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        form {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1> emails </h1>
+    <a href="./">back</a>
+    <br>
+    <br>
+    <form action="./email" method="post">
+        <input type="text" name="email" placeholder="email or @domain.com">
+        <input type="hidden" name="action" value="add">
+        <input type="submit" value="add email">
+    </form>
+    <ul>
+        {{ range $email := .Emails }}
+            <li>
+            {{ $email }} &bull; <form action="./email" method="post">
+                <input type="hidden" name="email" value="{{ $email }}">
+                <input type="hidden" name="action" value="remove">
+                <input type="submit" value="remove">
+            </form>
+            </li>
+        {{ end }}
+    </ul>
+</body>

@@ -33,9 +33,18 @@ type App struct {
 	Target string
 	Bind   string
 	Proxy  bool
-	Users  map[string]string // username:password
-	Emails []string          // list of emails or @domains
-	Roles  map[string]string // username/email:role
+
+	// username:password
+	Users     map[string]string
+	usersFile string
+
+	// list of emails or @domains
+	Emails     []string
+	emailsFile string
+
+	// username/email:role
+	Roles     map[string]string
+	rolesFile string
 
 	RedirectAllowlist []url.URL
 
@@ -205,9 +214,9 @@ func (c *App) Set() {
 	emails := viper.GetStringSlice("app.emails")
 
 	// load emails from a file
-	emailsFile := viper.GetString("app.emails_file")
-	if emailsFile != "" {
-		emailsBytes, err := os.ReadFile(emailsFile)
+	c.emailsFile = viper.GetString("app.emails_file")
+	if c.emailsFile != "" {
+		emailsBytes, err := os.ReadFile(c.emailsFile)
 		if err != nil {
 			log.Panic().Err(err).Msgf("error opening emails file")
 		}
@@ -220,9 +229,9 @@ func (c *App) Set() {
 	users := viper.GetStringSlice("app.users")
 
 	// load users from a file
-	usersFile := viper.GetString("app.users_file")
-	if usersFile != "" {
-		usersBytes, err := os.ReadFile(usersFile)
+	c.usersFile = viper.GetString("app.users_file")
+	if c.usersFile != "" {
+		usersBytes, err := os.ReadFile(c.usersFile)
 		if err != nil {
 			log.Panic().Err(err).Msgf("error opening users file")
 		}
@@ -235,9 +244,9 @@ func (c *App) Set() {
 	roles := viper.GetStringSlice("app.roles")
 
 	// load roles from a file
-	rolesFile := viper.GetString("app.roles_file")
-	if rolesFile != "" {
-		rolesBytes, err := os.ReadFile(rolesFile)
+	c.rolesFile = viper.GetString("app.roles_file")
+	if c.rolesFile != "" {
+		rolesBytes, err := os.ReadFile(c.rolesFile)
 		if err != nil {
 			log.Panic().Err(err).Msgf("error opening roles file")
 		}
@@ -322,6 +331,46 @@ func (c *App) Set() {
 
 	c.Expiration.LoginLink = time.Duration(viper.GetInt64("app.expiration.link")) * time.Second
 	c.Expiration.Session = time.Duration(viper.GetInt64("app.expiration.session")) * time.Second
+}
+
+func (c *App) SaveEmails() error {
+	// if there is no emails file, we cannot save anything
+	if c.emailsFile == "" {
+		return fmt.Errorf("no emails file specified")
+	}
+
+	payload := []byte(strings.Join(c.Emails, "\n"))
+	return os.WriteFile(c.emailsFile, payload, 0644)
+}
+
+func (c *App) SaveUsers() error {
+	// if there is no users file, we cannot save anything
+	if c.usersFile == "" {
+		return fmt.Errorf("no users file specified")
+	}
+
+	users := []string{}
+	for username, secret := range c.Users {
+		users = append(users, fmt.Sprintf("%s:%s", username, secret))
+	}
+
+	payload := []byte(strings.Join(users, "\n"))
+	return os.WriteFile(c.usersFile, payload, 0644)
+}
+
+func (c *App) SaveRoles() error {
+	// if there is no roles file, we cannot save anything
+	if c.rolesFile == "" {
+		return fmt.Errorf("no roles file specified")
+	}
+
+	roles := []string{}
+	for user, role := range c.Roles {
+		roles = append(roles, fmt.Sprintf("%s=%s", user, role))
+	}
+
+	payload := []byte(strings.Join(roles, "\n"))
+	return os.WriteFile(c.rolesFile, payload, 0644)
 }
 
 //
@@ -491,4 +540,32 @@ func (c *Redis) Set() {
 	c.Addr = fmt.Sprintf("%s:%d", viper.GetString("redis.host"), viper.GetInt("redis.port"))
 	c.Password = viper.GetString("redis.password")
 	c.Database = viper.GetInt("redis.database")
+}
+
+//
+// gui
+//
+
+type Gui struct {
+	Enabled bool
+	Bind    string
+}
+
+func (Gui) Init(cmd *cobra.Command) error {
+	cmd.PersistentFlags().Bool("gui.enabled", false, "If GUI should be enabled.")
+	if err := viper.BindPFlag("gui.enabled", cmd.PersistentFlags().Lookup("gui.enabled")); err != nil {
+		return err
+	}
+
+	cmd.PersistentFlags().String("gui.bind", "127.0.0.1:8081", "Address, where is HTTP server listening.")
+	if err := viper.BindPFlag("gui.bind", cmd.PersistentFlags().Lookup("gui.bind")); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (c *Gui) Set() {
+	c.Enabled = viper.GetBool("gui.enabled")
+	c.Bind = viper.GetString("gui.bind")
 }

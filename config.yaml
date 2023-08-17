@@ -101,3 +101,10 @@ redis:
   password: ""
   # Redis database.
   database: 0
+
+# (MVP) gui administation, very basic.
+gui:
+  # If GUI should be enabled.
+  enabled: false
+  # GUI bind address.
+  bind: "127.0.0.1:8081"

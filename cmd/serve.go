@@ -15,7 +15,17 @@ func init() {
 		Use:   "serve",
 		Short: "Start HTTP server.",
 		Run: func(cmd *cobra.Command, args []string) {
-			err := internal.Serve(config)
+			if config.Gui.Enabled {
+				go func() {
+					// TODO: Shutdown.
+					err := internal.ServeGui(config)
+					if err != nil {
+						log.Panic().Err(err).Msg("unable to start gui command")
+					}
+				}()
+			}
+
+			err := internal.ServeApp(config)
 			if err != nil {
 				log.Panic().Err(err).Msg("unable to start serve command")
 			}
