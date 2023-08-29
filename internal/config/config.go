@@ -50,8 +50,8 @@ type App struct {
 
 	LoginBtn bool // do not login automatically but show login button instead
 
-	Header     Header
-	Expiration Expiration
+	Header     *Header
+	Expiration *Expiration
 }
 
 func (c *App) GetUrl(redirectTo string) string {

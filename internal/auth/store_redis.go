@@ -13,10 +13,10 @@ import (
 type storeRedis struct {
 	sync.Mutex
 	client     *redis.Client
-	expiration config.Expiration
+	expiration *config.Expiration
 }
 
-func NewStoreRedis(config config.Redis, expiration config.Expiration) *storeRedis {
+func NewStoreRedis(config *config.Redis, expiration *config.Expiration) *storeRedis {
 	return &storeRedis{
 		client: redis.NewClient(&redis.Options{
 			Addr:     config.Addr,

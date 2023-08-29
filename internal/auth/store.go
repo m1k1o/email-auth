@@ -20,7 +20,7 @@ type Store interface {
 	Delete(token string) error
 }
 
-func NewStore(config config.Redis, expiration config.Expiration) Store {
+func NewStore(config *config.Redis, expiration *config.Expiration) Store {
 	if config.Enabled {
 		log.Info().Msgf("using redis on %s", config.Addr)
 		return NewStoreRedis(config, expiration)

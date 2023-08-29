@@ -5,12 +5,12 @@ import (
 )
 
 type Serve struct {
-	App    App
-	Tmpl   Tmpl
-	Email  Email
-	Cookie Cookie
-	Redis  Redis
-	Gui    Gui
+	App    *App
+	Tmpl   *Tmpl
+	Email  *Email
+	Cookie *Cookie
+	Redis  *Redis
+	Gui    *Gui
 }
 
 func (c *Serve) Init(cmd *cobra.Command) error {

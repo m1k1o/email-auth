@@ -22,7 +22,7 @@ func init() {
 
 			toEmail := args[0]
 
-			err := mail.Test(config, toEmail)
+			err := mail.Test(&config, toEmail)
 			if err != nil {
 				log.Panic().Err(err).Msg("unable to start test command")
 			}
