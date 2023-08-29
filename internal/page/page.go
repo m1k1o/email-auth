@@ -22,11 +22,11 @@ type Template struct {
 }
 
 type Manager struct {
-	app  config.App
+	app  *config.App
 	tmpl *template.Template
 }
 
-func New(templatePath string, app config.App) (*Manager, error) {
+func New(templatePath string, app *config.App) (*Manager, error) {
 	html, err := os.ReadFile(templatePath)
 	if err != nil {
 		return nil, err

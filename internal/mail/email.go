@@ -13,12 +13,12 @@ import (
 )
 
 type Manager struct {
-	app   config.App
-	email config.Email
+	app   *config.App
+	email *config.Email
 	tmpl  *template.Template
 }
 
-func New(templatePath string, app config.App, email config.Email) (*Manager, error) {
+func New(templatePath string, app *config.App, email *config.Email) (*Manager, error) {
 	html, err := os.ReadFile(templatePath)
 	if err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (manager *Manager) Send(email, token, redirectTo string) error {
 	return Send(manager.email, m)
 }
 
-func Send(config config.Email, message *mail.Message) error {
+func Send(config *config.Email, message *mail.Message) error {
 	dialer := mail.NewDialer(config.Host, config.Port, config.Username, config.Password)
 
 	// This is only needed when SSL/TLS certificate is not valid on server.
@@ -97,7 +97,7 @@ func Send(config config.Email, message *mail.Message) error {
 	return dialer.DialAndSend(message)
 }
 
-func Test(config config.Email, toEmail string) error {
+func Test(config *config.Email, toEmail string) error {
 	m := mail.NewMessage()
 
 	// Set email sender

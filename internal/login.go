@@ -19,8 +19,8 @@ import (
 )
 
 type login struct {
-	app    config.App
-	cookie config.Cookie
+	app    *config.App
+	cookie *config.Cookie
 
 	auth auth.Store
 	mail *mail.Manager

@@ -10,10 +10,10 @@ import (
 type storeObject struct {
 	sync.Mutex
 	sessions   map[string]*Session
-	expiration config.Expiration
+	expiration *config.Expiration
 }
 
-func NewStoreObject(expiration config.Expiration) *storeObject {
+func NewStoreObject(expiration *config.Expiration) *storeObject {
 	return &storeObject{
 		sessions:   map[string]*Session{},
 		expiration: expiration,

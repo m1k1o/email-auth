@@ -44,8 +44,8 @@ func tokenFromContext(ctx context.Context) string {
 }
 
 type verify struct {
-	app    config.App
-	cookie config.Cookie
+	app    *config.App
+	cookie *config.Cookie
 
 	auth auth.Store
 }

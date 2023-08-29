@@ -22,12 +22,12 @@ var emailsHtml string
 var usersHtml string
 
 type Manager struct {
-	app    config.App
-	config config.Gui
+	app    *config.App
+	config *config.Gui
 	mux    *http.ServeMux
 }
 
-func New(app config.App, config config.Gui) (*Manager, error) {
+func New(app *config.App, config *config.Gui) (*Manager, error) {
 	return &Manager{
 		app:    app,
 		config: config,
